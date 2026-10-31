@@ -15,7 +15,11 @@ A single-page learning reference for Microsoft Azure, aimed at developers and in
 - **Tooling & IaC**: CLI, Bicep, Terraform, azd, Azure DevOps, GitHub Actions
 - **Developer track**: SDKs with DefaultAzureCredential, local dev loop, config and secrets, shipping code, gotchas
 - **Infrastructure track**: IP planning, IaC structure, connectivity troubleshooting, cost hygiene, production baseline
-- **Monitoring & ops**, **Well-Architected Framework**, **12-week plan** (progress saved in your browser), **learning resources**, **glossary**
+- **Containers & Kubernetes**: vocabulary, Dockerfile, ACR builds, manifests, kubectl, pod troubleshooting
+- **Monitoring & ops**, **Well-Architected Framework**, **12-week plan** (progress saved in your browser)
+- **Hands-on labs**: five guided labs (Key Vault + managed identity, private endpoints, Container Apps scaling, Bicep via GitHub Actions OIDC, KQL)
+- **First 30 days**: questions to ask your team and read-only commands to map your environment
+- **Learning resources**, **glossary**
 
 ## Editing
 

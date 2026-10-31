@@ -141,7 +141,8 @@ td:first-child{font-weight:700;white-space:nowrap}
 details.week{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 details.week summary{cursor:pointer;padding:14px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center;list-style:none}
 details.week summary::-webkit-details-marker{display:none}
-details.week summary h3{font-size:1.05rem}
+details.week summary{flex-wrap:wrap}
+details.week summary h3{font-size:1.05rem;min-width:0}
 details.week summary .wk{font-family:var(--mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
 details.week .body{padding:0 18px 16px;display:grid;gap:8px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:.94rem}
@@ -205,9 +206,12 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
       <li><a href="#tooling">Tooling &amp; IaC</a></li>
       <li><a href="#dev">Developer track</a></li>
       <li><a href="#infra">Infrastructure track</a></li>
+      <li><a href="#containers">Containers &amp; Kubernetes</a></li>
       <li><a href="#ops">Monitoring &amp; ops</a></li>
       <li><a href="#waf">Well-Architected</a></li>
       <li><a href="#plan">12-week plan</a></li>
+      <li><a href="#labs">Hands-on labs</a></li>
+      <li><a href="#onboarding">First 30 days</a></li>
       <li><a href="#learn">Learning resources</a></li>
       <li><a href="#glossary">Glossary</a></li>
     </ol>
@@ -217,7 +221,7 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
   <main>
     <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
       <select id="jumpSel">
-        <option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="start">Start here</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Developer track</option><option value="infra">Infrastructure track</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="plan">12-week plan</option><option value="learn">Learning resources</option><option value="glossary">Glossary</option>
+        <option value="start">Start here</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Developer track</option><option value="infra">Infrastructure track</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="plan">12-week plan</option><option value="labs">Hands-on labs</option><option value="onboarding">First 30 days</option><option value="learn">Learning resources</option><option value="glossary">Glossary</option>
       </select>
     </div>
 
@@ -225,7 +229,7 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
       <span class="eyebrow">A working reference for Microsoft Azure · Oct 2026</span>
       <h1>Azure Field Guide</h1>
       <p class="lede">How Azure is organized, what the major services do, how they connect in real systems, and a 12-week plan to get fluent. Start with the mental model. Everything else hangs off it.</p>
-      <div class="hero-meta"><span>13 chapters</span><span id="svcCount">— services</span><span>Decision tables · reference architectures · developer and infrastructure tracks · CLI, Bicep, Terraform &amp; KQL snippets</span></div>
+      <div class="hero-meta"><span>16 chapters</span><span id="svcCount">— services</span><span>Decision tables · reference architectures · developer and infrastructure tracks · hands-on labs · CLI, Bicep, Terraform &amp; KQL snippets</span></div>
     </header>
 
     <section id="start" class="start">
@@ -241,7 +245,7 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padd
       </div>
       <div class="callout"><b>Five habits that save beginners:</b> put every experiment in its own resource group and delete the whole group when done · set a budget alert on any subscription you use · never paste keys or connection strings into code or chat · run <code>what-if</code> before every deployment · tag resources with <code>owner</code> and <code>env</code>.</div>
       <div class="grid" style="grid-template-columns:minmax(0,1fr)"><div class="order"><b>Suggested reading order:</b>
-        <a href="#mental-model">1 · Mental model</a><span>→</span><a href="#identity">2 · Identity</a><span>→</span><a href="#tooling">6 · Tooling</a><span>→</span><a href="#dev">7 · Developer track</a><span>→</span><a href="#infra">8 · Infrastructure track</a><span>→</span><a href="#patterns">5 · Patterns</a><span>→</span><a href="#plan">11 · Start the plan</a>
+        <a href="#mental-model">1 · Mental model</a><span>→</span><a href="#identity">2 · Identity</a><span>→</span><a href="#tooling">6 · Tooling</a><span>→</span><a href="#dev">7 · Developer track</a><span>→</span><a href="#infra">8 · Infrastructure track</a><span>→</span><a href="#patterns">5 · Patterns</a><span>→</span><a href="#containers">9 · Containers</a><span>→</span><a href="#plan">12 · Start the plan</a><span>+</span><a href="#labs">13 · Labs</a>
         <span>· Use the <a href="#catalog" style="border:0;padding:0;background:none">catalog</a> and <a href="#glossary" style="border:0;padding:0;background:none">glossary</a> whenever a name is unfamiliar.</span></div></div>
     </section>
 
@@ -952,9 +956,144 @@ resources
         </tbody></table></div>
     </section>
 
+    <!-- containers -->
+    <section id="containers">
+      <header><span class="track dev">Developer</span><span class="track infra">Infrastructure</span><span class="eyebrow">Chapter 9</span><h2>Containers &amp; Kubernetes</h2>
+        <p class="lede">Containers show up in almost every Azure team, whether apps run on Container Apps, App Service or AKS. This chapter covers the vocabulary, the build-and-push loop, and enough Kubernetes to read your team's manifests.</p></header>
+
+      <h3>The vocabulary</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Term</th><th>What it means</th><th>Where it lives in Azure</th></tr></thead>
+        <tbody>
+          <tr><td>Image</td><td>A packaged app plus everything it needs to run, built from a <code>Dockerfile</code></td><td>Stored in Azure Container Registry (ACR)</td></tr>
+          <tr><td>Registry</td><td>A store of images, addressed as <code>registry/repo:tag</code></td><td><code>myacr.azurecr.io/orders-api:1.4.2</code></td></tr>
+          <tr><td>Container</td><td>A running instance of an image</td><td>Container Apps replica, App Service instance, AKS pod</td></tr>
+          <tr><td>Pod</td><td>Kubernetes' smallest unit: one or more containers sharing a network address</td><td>AKS</td></tr>
+          <tr><td>Deployment</td><td>Keeps N copies of a pod running and rolls out new versions</td><td>AKS (Container Apps does this for you with revisions)</td></tr>
+          <tr><td>Service</td><td>A stable internal address that load-balances across pods</td><td>AKS; <code>type: LoadBalancer</code> creates an Azure Load Balancer</td></tr>
+          <tr><td>Ingress / Gateway</td><td>HTTP routing from outside the cluster to services</td><td>App Routing add-on (NGINX), Application Gateway for Containers</td></tr>
+          <tr><td>Namespace</td><td>A folder inside a cluster for separating teams or apps</td><td>AKS</td></tr>
+          <tr><td>ConfigMap / Secret</td><td>Config and sensitive values injected into pods</td><td>Prefer Key Vault via the Secrets Store CSI driver</td></tr>
+          <tr><td>Node pool</td><td>The VMs that run pods; system pools run cluster services, user pools run your apps</td><td>VM Scale Sets managed by AKS</td></tr>
+          <tr><td>Helm chart</td><td>A templated, versioned package of Kubernetes manifests</td><td>Often stored in ACR as OCI artifacts</td></tr>
+          <tr><td>Workload identity</td><td>Lets a pod use a managed identity to call Azure services with no secrets</td><td>AKS with OIDC issuer enabled</td></tr>
+        </tbody></table></div>
+
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">Dockerfile for a small Flask API</span><button class="copy" type="button">Copy</button></div>
+<pre>FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+<span class="c"># run as a non-root user</span>
+RUN useradd -m appuser
+USER appuser
+
+EXPOSE 8000
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">Build in the cloud, push to ACR</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># create a registry (name must be globally unique, letters/digits)</span>
+az acr create -g rg-demo-dev -n acrdemodev$RANDOM --sku Basic
+
+<span class="c"># build remotely with ACR Tasks: no Docker needed locally</span>
+az acr build -r &lt;acrName&gt; -t orders-api:1.0.0 .
+
+<span class="c"># list what's in the registry</span>
+az acr repository list -n &lt;acrName&gt; -o table
+az acr repository show-tags -n &lt;acrName&gt; --repository orders-api
+
+<span class="c"># or build locally and push</span>
+az acr login -n &lt;acrName&gt;
+docker build -t &lt;acrName&gt;.azurecr.io/orders-api:1.0.0 .
+docker push &lt;acrName&gt;.azurecr.io/orders-api:1.0.0</pre></div>
+      </div>
+
+      <h3>Reading a Kubernetes manifest</h3>
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">deployment.yaml</span><button class="copy" type="button">Copy</button></div>
+<pre>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: orders
+spec:
+  replicas: 3                     <span class="c"># keep 3 pods running</span>
+  selector:
+    matchLabels: { app: orders-api }
+  template:
+    metadata:
+      labels:
+        app: orders-api
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: orders-api   <span class="c"># linked to a managed identity</span>
+      containers:
+        - name: api
+          image: acrdemodev.azurecr.io/orders-api:1.0.0
+          ports: [{ containerPort: 8000 }]
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  namespace: orders
+spec:
+  selector: { app: orders-api }
+  ports: [{ port: 80, targetPort: 8000 }]</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">AKS + kubectl essentials</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># small lab cluster that can pull from your registry</span>
+az aks create -g rg-demo-dev -n aks-demo \
+  --node-count 1 --node-vm-size Standard_B2s \
+  --attach-acr &lt;acrName&gt; \
+  --enable-oidc-issuer --enable-workload-identity \
+  --generate-ssh-keys
+
+<span class="c"># point kubectl at it</span>
+az aks install-cli               <span class="c"># if kubectl isn't installed</span>
+az aks get-credentials -g rg-demo-dev -n aks-demo
+
+<span class="c"># apply and inspect</span>
+kubectl create namespace orders
+kubectl apply -f deployment.yaml
+kubectl get pods -n orders -o wide
+kubectl describe pod &lt;pod&gt; -n orders    <span class="c"># events explain most failures</span>
+kubectl logs deploy/orders-api -n orders --tail=50
+kubectl port-forward svc/orders-api 8080:80 -n orders
+
+<span class="c"># roll out a new version and watch it</span>
+kubectl set image deploy/orders-api api=&lt;acr&gt;.azurecr.io/orders-api:1.0.1 -n orders
+kubectl rollout status deploy/orders-api -n orders
+kubectl rollout undo deploy/orders-api -n orders
+
+<span class="c"># stop paying for the lab</span>
+az aks stop -g rg-demo-dev -n aks-demo</pre></div>
+      </div>
+
+      <h3>Pod troubleshooting cheat sheet</h3>
+      <div class="gotchas">
+        <div><b><code>ImagePullBackOff</code></b><p>Wrong image name or tag, or the cluster can't authenticate to ACR. Check the tag exists and run <code>az aks check-acr -g &lt;rg&gt; -n &lt;aks&gt; --acr &lt;acr&gt;.azurecr.io</code>.</p></div>
+        <div><b><code>CrashLoopBackOff</code></b><p>The container starts then exits. Read <code>kubectl logs &lt;pod&gt; --previous</code>; usually a missing env var or a bad startup command.</p></div>
+        <div><b><code>Pending</code></b><p>No node has room. <code>kubectl describe pod</code> shows "Insufficient cpu/memory". Lower requests or scale the node pool.</p></div>
+        <div><b><code>OOMKilled</code></b><p>The container used more memory than its limit. Raise the limit or fix the leak.</p></div>
+        <div><b>Running but not receiving traffic</b><p>The readiness probe is failing, or the Service's <code>selector</code> doesn't match the pod labels. Check <code>kubectl get endpoints</code>.</p></div>
+        <div><b>403 calling Azure from a pod</b><p>Workload identity isn't wired up: the service account annotation, the federated credential on the managed identity, or the role assignment is missing.</p></div>
+      </div>
+
+      <div class="callout"><b>Same app, less platform:</b> everything above maps onto Container Apps without managing a cluster. A Deployment becomes a container app, a rollout becomes a revision, and HPA/KEDA scaling becomes a scale rule. Learn the Kubernetes words anyway, because Container Apps' docs and error messages use them.</div>
+    </section>
+
     <!-- 9 -->
     <section id="ops">
-      <header><span class="eyebrow">Chapter 9</span><h2>Monitoring &amp; operations</h2>
+      <header><span class="eyebrow">Chapter 10</span><h2>Monitoring &amp; operations</h2>
         <p class="lede">Azure Monitor is the umbrella. Underneath it, nearly everything ends up as rows in a Log Analytics workspace that you query with KQL.</p></header>
 
       <div class="cols">
@@ -1016,7 +1155,7 @@ resources
 
     <!-- 8 -->
     <section id="waf">
-      <header><span class="eyebrow">Chapter 10</span><h2>The Well-Architected Framework</h2>
+      <header><span class="eyebrow">Chapter 11</span><h2>The Well-Architected Framework</h2>
         <p class="lede">Microsoft's design-review vocabulary. Expect architects to use these five pillars by name, and expect trade-offs between them.</p></header>
       <div class="tablewrap"><table>
         <thead><tr><th>Pillar</th><th>The question</th><th>Typical Azure answers</th></tr></thead>
@@ -1032,14 +1171,348 @@ resources
 
     <!-- 9 -->
     <section id="plan">
-      <header><span class="eyebrow">Chapter 11</span><h2>A 12-week plan</h2>
+      <header><span class="eyebrow">Chapter 12</span><h2>A 12-week plan</h2>
         <p class="lede">About 5–7 hours a week alongside work. Tick items off as you go; your progress is saved in this browser only. Use a free account or a sandbox subscription from work, and set a budget alert on day one.</p></header>
       <div class="weeks" id="weeks"></div>
     </section>
 
+    <!-- labs -->
+    <section id="labs">
+      <header><span class="eyebrow">Chapter 13</span><h2>Hands-on labs</h2>
+        <p class="lede">Five guided labs that go with the 12-week plan. Each one creates its own resource group so you can delete everything with one command at the end. Run them in a bash shell (macOS Terminal, WSL or Cloud Shell) after <code>az login</code>.</p></header>
+      <div class="callout"><b>Before you start:</b> use a personal or sandbox subscription, not your employer's production one. Every lab lists rough cost; most cost cents if you delete them the same day. Set <code>LOC</code> to a region near you that your subscription allows.</div>
+
+      <div class="weeks">
+        <details class="week" open>
+          <summary><h3>Lab 1 · Web app that reads a Key Vault secret with managed identity</h3><span class="wk">Plan weeks 2 &amp; 6 · ~45 min · B1 plan</span></summary>
+          <div class="body">
+            <p>You will deploy a Flask app to App Service, give it a managed identity, and have it read a secret from Key Vault through an app setting, with no password anywhere.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 1: create the resources</span><button class="copy" type="button">Copy</button></div>
+<pre>RG=rg-lab1; LOC=eastus2; SFX=$RANDOM
+APP=app-lab1-$SFX; KV=kv-lab1-$SFX
+
+az group create -n $RG -l $LOC
+az appservice plan create -n plan-lab1 -g $RG --sku B1 --is-linux
+az webapp create -n $APP -g $RG -p plan-lab1 --runtime "PYTHON:3.12"
+
+<span class="c"># turn on a system-assigned managed identity</span>
+az webapp identity assign -n $APP -g $RG
+APP_PRINCIPAL=$(az webapp identity show -n $APP -g $RG --query principalId -o tsv)
+
+<span class="c"># Key Vault using Azure RBAC for permissions</span>
+az keyvault create -n $KV -g $RG -l $LOC --enable-rbac-authorization true
+KV_ID=$(az keyvault show -n $KV --query id -o tsv)
+ME=$(az ad signed-in-user show --query id -o tsv)
+
+<span class="c"># you can write secrets; the app can only read them</span>
+az role assignment create --assignee $ME --role "Key Vault Secrets Officer" --scope $KV_ID
+az role assignment create --assignee-object-id $APP_PRINCIPAL \
+  --assignee-principal-type ServicePrincipal \
+  --role "Key Vault Secrets User" --scope $KV_ID
+
+<span class="c"># role assignments take a minute or two to apply</span>
+sleep 60
+az keyvault secret set --vault-name $KV -n Greeting --value "hello from Key Vault"
+
+<span class="c"># app setting that points at the secret</span>
+az webapp config appsettings set -n $APP -g $RG \
+  --settings "GREETING=@Microsoft.KeyVault(VaultName=$KV;SecretName=Greeting)"</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 2: write and deploy the app</span><button class="copy" type="button">Copy</button></div>
+<pre>mkdir lab1 &amp;&amp; cd lab1
+printf 'flask\ngunicorn\n' &gt; requirements.txt
+cat &gt; app.py &lt;&lt;'PY'
+import os
+from flask import Flask
+app = Flask(__name__)
+
+@app.get("/")
+def index():
+    return os.environ.get("GREETING", "GREETING is not set")
+PY
+
+az webapp up -n $APP -g $RG --runtime "PYTHON:3.12"
+curl https://$APP.azurewebsites.net</pre></div>
+            <p><b>Check:</b> the page prints "hello from Key Vault". In the portal, open the app → <i>Settings → Environment variables</i>; the GREETING row shows a green Key Vault reference status. If it shows an error, the role assignment hadn't applied yet: restart the app after a minute.</p>
+            <p><b>Try breaking it:</b> remove the app's role assignment, restart the app and reload. You'll see the raw <code>@Microsoft.KeyVault(...)</code> text, which is what a failed reference looks like.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait
+<span class="c"># Key Vault soft-deletes; purge it so the name can be reused</span>
+az keyvault purge -n $KV</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>Lab 2 · Lock a storage account behind a private endpoint</h3><span class="wk">Plan weeks 4–5 · ~40 min · B1s VM</span></summary>
+          <div class="body">
+            <p>You will build a VNet, put a storage account behind a private endpoint with public access off, and prove that DNS resolves to a private IP from inside the VNet but not from your laptop.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Build it</span><button class="copy" type="button">Copy</button></div>
+<pre>RG=rg-lab2; LOC=eastus2; ST=stlab2$RANDOM
+ZONE=privatelink.blob.core.windows.net
+
+az group create -n $RG -l $LOC
+az network vnet create -g $RG -n vnet-lab2 --address-prefix 10.10.0.0/16 \
+  --subnet-name snet-vm --subnet-prefixes 10.10.1.0/24
+az network vnet subnet create -g $RG --vnet-name vnet-lab2 \
+  -n snet-pe --address-prefixes 10.10.2.0/24
+
+<span class="c"># storage with no public network access</span>
+az storage account create -n $ST -g $RG -l $LOC --sku Standard_LRS \
+  --public-network-access Disabled --allow-blob-public-access false
+ST_ID=$(az storage account show -n $ST -g $RG --query id -o tsv)
+
+<span class="c"># private endpoint for the blob service</span>
+az network private-endpoint create -g $RG -n pe-$ST \
+  --vnet-name vnet-lab2 --subnet snet-pe \
+  --private-connection-resource-id $ST_ID --group-id blob --connection-name blob-conn
+
+<span class="c"># private DNS so the normal name resolves to the private IP</span>
+az network private-dns zone create -g $RG -n $ZONE
+az network private-dns link vnet create -g $RG -n link-lab2 -z $ZONE -v vnet-lab2 -e false
+az network private-endpoint dns-zone-group create -g $RG --endpoint-name pe-$ST \
+  -n default --private-dns-zone $ZONE --zone-name blob
+
+<span class="c"># a VM with no public IP to test from</span>
+az vm create -g $RG -n vm-lab2 --image Ubuntu2204 --size Standard_B1s \
+  --vnet-name vnet-lab2 --subnet snet-vm --public-ip-address "" \
+  --admin-username azureuser --generate-ssh-keys</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Prove it</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># from your laptop: public answer, and requests are refused</span>
+nslookup $ST.blob.core.windows.net
+
+<span class="c"># from inside the VNet: a 10.10.2.x address</span>
+az vm run-command invoke -g $RG -n vm-lab2 --command-id RunShellScript \
+  --scripts "nslookup $ST.blob.core.windows.net"</pre></div>
+            <p><b>Check:</b> inside the VNet the name resolves through <code>{name}.privatelink.blob.core.windows.net</code> to a 10.10.2.x address. Then delete the DNS zone link and run the VM test again: it now gets the public IP and the connection fails. That's the most common private-endpoint bug, and now you've seen it.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>Lab 3 · Container Apps that scale to zero</h3><span class="wk">Plan week 7 · ~30 min · pay per use</span></summary>
+          <div class="body">
+            <p>You will run a public container on Container Apps, add an HTTP scale rule, and watch replicas appear under load and disappear when idle.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Deploy and scale</span><button class="copy" type="button">Copy</button></div>
+<pre>az extension add --name containerapp --upgrade
+az provider register -n Microsoft.App --wait
+az provider register -n Microsoft.OperationalInsights --wait
+
+RG=rg-lab3; LOC=eastus2
+az group create -n $RG -l $LOC
+
+<span class="c"># creates the environment, Log Analytics workspace and app in one go</span>
+az containerapp up -n ca-lab3 -g $RG -l $LOC \
+  --image mcr.microsoft.com/k8se/quickstart:latest \
+  --target-port 80 --ingress external
+
+<span class="c"># scale between 0 and 5 replicas, 10 concurrent requests each</span>
+az containerapp update -n ca-lab3 -g $RG \
+  --min-replicas 0 --max-replicas 5 \
+  --scale-rule-name http-rule --scale-rule-type http \
+  --scale-rule-http-concurrency 10
+
+URL=https://$(az containerapp show -n ca-lab3 -g $RG \
+  --query properties.configuration.ingress.fqdn -o tsv)
+echo $URL</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Generate load and watch</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># terminal 1: send ~500 requests in parallel batches</span>
+for i in $(seq 1 10); do
+  for j in $(seq 1 50); do curl -s -o /dev/null $URL &amp; done; wait
+done
+
+<span class="c"># terminal 2: watch replicas</span>
+watch -n 5 "az containerapp replica list -n ca-lab3 -g $RG -o table"
+
+<span class="c"># revisions: each config change makes a new one</span>
+az containerapp revision list -n ca-lab3 -g $RG -o table</pre></div>
+            <p><b>Check:</b> replicas climb above 1 under load, then drop to 0 a few minutes after the load stops. The next request after that is slower; that's a cold start. Then find the app's logs in its Log Analytics workspace with <code>ContainerAppConsoleLogs_CL | take 20</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>Lab 4 · Deploy Bicep from GitHub Actions with no secrets</h3><span class="wk">Plan week 11 · ~45 min · storage only</span></summary>
+          <div class="body">
+            <p>You will create an Entra app that trusts your GitHub repo through OIDC, give it Contributor on one resource group, and deploy a Bicep file on every push to <code>main</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 1: identity and trust (run once)</span><button class="copy" type="button">Copy</button></div>
+<pre>REPO=your-github-user/your-repo     <span class="c"># change this</span>
+RG=rg-lab4; LOC=eastus2
+
+az group create -n $RG -l $LOC
+APP_ID=$(az ad app create --display-name gh-lab4-deployer --query appId -o tsv)
+az ad sp create --id $APP_ID
+
+<span class="c"># least privilege: Contributor on this one resource group only</span>
+az role assignment create --assignee $APP_ID --role Contributor \
+  --scope $(az group show -n $RG --query id -o tsv)
+
+<span class="c"># trust tokens from pushes to main in your repo</span>
+az ad app federated-credential create --id $APP_ID --parameters "{
+  \"name\": \"gh-main\",
+  \"issuer\": \"https://token.actions.githubusercontent.com\",
+  \"subject\": \"repo:$REPO:ref:refs/heads/main\",
+  \"audiences\": [\"api://AzureADTokenExchange\"]
+}"
+
+<span class="c"># store the IDs as repo variables (they are not secrets)</span>
+gh variable set AZURE_CLIENT_ID -R $REPO -b $APP_ID
+gh variable set AZURE_TENANT_ID -R $REPO -b $(az account show --query tenantId -o tsv)
+gh variable set AZURE_SUBSCRIPTION_ID -R $REPO -b $(az account show --query id -o tsv)</pre></div>
+            <div class="cols">
+              <div class="code"><div class="cap"><span class="eyebrow">infra/main.bicep</span><button class="copy" type="button">Copy</button></div>
+<pre>param location string = resourceGroup().location
+
+resource st 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'stlab4${uniqueString(resourceGroup().id)}'
+  location: location
+  sku: { name: 'Standard_LRS' }
+  kind: 'StorageV2'
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+  }
+  tags: { lab: '4', deployedBy: 'github-actions' }
+}
+
+output name string = st.name</pre></div>
+              <div class="code"><div class="cap"><span class="eyebrow">.github/workflows/deploy.yml</span><button class="copy" type="button">Copy</button></div>
+<pre>name: deploy-infra
+on:
+  push:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - run: az deployment group what-if -g rg-lab4 -f infra/main.bicep
+      - run: az deployment group create -g rg-lab4 -f infra/main.bicep</pre></div>
+            </div>
+            <p><b>Check:</b> push to <code>main</code>, open the Actions tab, and confirm the what-if step lists the storage account as "Create". Run it again and what-if shows "NoChange". Bicep deployments are idempotent.</p>
+            <p><b>Gotcha:</b> the federated credential's <code>subject</code> must match exactly how the job runs. If you add <code>environment: prod</code> to the job, the subject becomes <code>repo:OWNER/REPO:environment:prod</code> and you need a second credential. The error is <code>AADSTS700213: No matching federated identity record found</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n rg-lab4 --yes --no-wait
+az ad app delete --id $APP_ID</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>Lab 5 · Learn KQL on real data without deploying anything</h3><span class="wk">Plan week 10 · ~30 min · free</span></summary>
+          <div class="body">
+            <p>Microsoft hosts a demo Log Analytics workspace full of sample telemetry. Open it from the <a href="https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-tutorial" target="_blank" rel="noopener">Log Analytics tutorial</a> and work through these queries, one idea per step.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">KQL in five steps</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c">// 1 look at a table: always start small</span>
+AppRequests | take 10
+
+<span class="c">// 2 filter rows and pick columns</span>
+AppRequests
+| where TimeGenerated &gt; ago(1h) and Success == false
+| project TimeGenerated, Name, ResultCode, DurationMs
+
+<span class="c">// 3 aggregate</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d)
+| summarize requests = count(), avgMs = avg(DurationMs) by Name
+| top 10 by requests
+
+<span class="c">// 4 time series and a chart</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d)
+| summarize count() by bin(TimeGenerated, 15m), Success
+| render timechart
+
+<span class="c">// 5 join requests to the exceptions they caused</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d) and Success == false
+| join kind=inner (AppExceptions | project OperationId, ExceptionType, OuterMessage) on OperationId
+| summarize count() by Name, ExceptionType
+| order by count_ desc</pre></div>
+            <p><b>Check:</b> you can explain what each pipe <code>|</code> does. Then save query 4 as an alert rule idea: what threshold would you page someone on?</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- first 30 days -->
+    <section id="onboarding">
+      <header><span class="eyebrow">Chapter 14</span><h2>Your first 30 days on the team</h2>
+        <p class="lede">Every company's Azure setup is different. These are the questions that turn this general guide into a map of your own environment, and the commands that answer some of them yourself.</p></header>
+
+      <div class="cols">
+        <div class="panel"><h3>Ask about access</h3><ul>
+          <li>Which Entra tenant(s) and subscriptions will I work in?</li>
+          <li>How do I request access, and is it through PIM (just-in-time)?</li>
+          <li>Is there a sandbox subscription where I can experiment?</li>
+          <li>Which Entra groups should I be in?</li>
+          <li>Do I need a separate admin account for privileged work?</li>
+        </ul></div>
+        <div class="panel"><h3>Ask about how things ship</h3><ul>
+          <li>Where is the infrastructure code: Bicep, Terraform, or both?</li>
+          <li>Azure DevOps or GitHub? Where do pipelines live?</li>
+          <li>What environments exist, and how does a change reach prod?</li>
+          <li>Who approves production changes? Is there change management?</li>
+          <li>Are there internal modules or templates I should reuse?</li>
+        </ul></div>
+        <div class="panel"><h3>Ask about the platform</h3><ul>
+          <li>Is there a landing zone? Who owns the hub network?</li>
+          <li>What naming and tagging conventions do we use?</li>
+          <li>Which Azure Policies will block me (regions, SKUs, public IPs)?</li>
+          <li>Which services are approved, and which are off-limits?</li>
+          <li>Where do logs go, and which dashboards does on-call use?</li>
+          <li>Who owns cost, and are there budgets per team?</li>
+        </ul></div>
+      </div>
+
+      <div class="code"><div class="cap"><span class="eyebrow">Map your environment yourself (read-only)</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># which tenants and subscriptions can I see?</span>
+az account list --query "[].{name:name, id:id, tenant:tenantId, default:isDefault}" -o table
+
+<span class="c"># what access do I actually have?</span>
+az role assignment list --assignee $(az ad signed-in-user show --query id -o tsv) --all \
+  --query "[].{role:roleDefinitionName, scope:scope}" -o table
+
+<span class="c"># management group tree (if you can read it)</span>
+az account management-group list -o table
+
+<span class="c"># what's deployed, by type, across everything I can see</span>
+az graph query -q "resources | summarize count() by type | order by count_ desc" --first 50 -o table
+
+<span class="c"># which resource groups exist and how are they tagged?</span>
+az group list --query "[].{name:name, location:location, tags:tags}" -o table
+
+<span class="c"># which policies apply to this subscription?</span>
+az policy assignment list --query "[].{name:displayName, scope:scope}" -o table</pre></div>
+
+      <div class="cols">
+        <div class="panel"><h3>Good first-month habits</h3><ul>
+          <li>Keep a personal notes file of resource names, subscription IDs and who owns what.</li>
+          <li>Draw the architecture of one production app and ask a teammate to correct it.</li>
+          <li>Read the last few incident write-ups; they show where the system really breaks.</li>
+          <li>Pair with someone on a real pipeline run end to end.</li>
+          <li>Read the IaC for one app before changing anything in the portal.</li>
+        </ul></div>
+        <div class="panel"><h3>Things to avoid early on</h3><ul>
+          <li>Creating resources in a production subscription to "try something".</li>
+          <li>Changing anything in the portal that is managed by IaC; the next deploy will revert it, or worse.</li>
+          <li>Regenerating storage or Cosmos DB keys: every app using the old key breaks.</li>
+          <li>Deleting resource groups you didn't create, even if they look abandoned.</li>
+          <li>Pasting connection strings, keys or tokens into chat, tickets or AI tools.</li>
+        </ul></div>
+      </div>
+    </section>
+
     <!-- 10 -->
     <section id="learn">
-      <header><span class="eyebrow">Chapter 12</span><h2>Learning resources</h2>
+      <header><span class="eyebrow">Chapter 15</span><h2>Learning resources</h2>
         <p class="lede">Primary sources first. Azure renames and retires things often, so trust current Microsoft docs over blog posts more than a year old.</p></header>
       <div class="res">
         <div><h3>Official docs &amp; guidance</h3><ul>
@@ -1091,7 +1564,7 @@ resources
 
     <!-- 11 -->
     <section id="glossary">
-      <header><span class="eyebrow">Chapter 13</span><h2>Glossary</h2>
+      <header><span class="eyebrow">Chapter 16</span><h2>Glossary</h2>
         <p class="lede">Terms and acronyms you will hear in your first month.</p></header>
       <dl class="gloss" id="gloss"></dl>
     </section>
@@ -1250,16 +1723,16 @@ document.querySelectorAll(".copy").forEach(b => b.onclick = () => {
 // 12-week plan
 const plan = [
   ["1","Cloud and Azure fundamentals",["Create a free or sandbox subscription and set a $10 budget alert","Read Chapter 1 of this guide; explain tenant → management group → subscription → resource group → resource out loud","Microsoft Learn: 'Describe cloud concepts' and 'Describe Azure architecture and services'","Tour the portal: create a resource group, then a storage account, then delete the group"]],
-  ["2","Identity and access",["Create a test user and group in Entra ID; assign Reader on a resource group to the group","Create a user-assigned managed identity and give it Storage Blob Data Reader","Read about Conditional Access and PIM; find out what your company enforces","Practice: explain why Owner on a storage account cannot read blobs via Entra auth"]],
+  ["2","Identity and access",["Create a test user and group in Entra ID; assign Reader on a resource group to the group","Create a user-assigned managed identity and give it Storage Blob Data Reader","Read about Conditional Access and PIM; find out what your company enforces","Practice: explain why Owner on a storage account cannot read blobs via Entra auth","Do Lab 1 (Chapter 13) up to the role assignments"]],
   ["3","CLI, Bicep and AZ-900",["Install Azure CLI and the Bicep VS Code extension","Deploy the Bicep sample from Chapter 6 with what-if first","Do the Microsoft Learn 'Fundamentals of Bicep' path","Book or take AZ-900 (optional but a good checkpoint)"]],
-  ["4","Networking I",["Build a VNet with two subnets and an NSG, all in Bicep","Deploy a Linux VM with no public IP and connect via Bastion","Learn service tags and NSG rule priority; test with Network Watcher IP flow verify","Draw your company's network topology if you can get access to it"]],
-  ["5","Networking II: private PaaS",["Put a storage account behind a private endpoint and disable public access","Create the private DNS zone and verify name resolution from the VM with nslookup","Compare service endpoints vs private endpoints in your own words","Read the hub-and-spoke reference architecture in the Architecture Center"]],
+  ["4","Networking I",["Build a VNet with two subnets and an NSG, all in Bicep","Deploy a Linux VM with no public IP and connect via Bastion","Learn service tags and NSG rule priority; test with Network Watcher IP flow verify","Draw your company's network topology if you can get access to it","Start Lab 2 (Chapter 13): build the VNet and VM"]],
+  ["5","Networking II: private PaaS",["Put a storage account behind a private endpoint and disable public access","Create the private DNS zone and verify name resolution from the VM with nslookup","Compare service endpoints vs private endpoints in your own words","Read the hub-and-spoke reference architecture in the Architecture Center","Finish Lab 2 and break the DNS link on purpose"]],
   ["6","Compute: App Service and Functions",["Deploy a small web API to App Service; use a deployment slot and swap","Give it a managed identity and read a secret from Key Vault via a Key Vault reference","Write a Function triggered by a Storage queue","Turn on Application Insights and find a request trace end to end"]],
-  ["7","Containers",["Build an image and push it to Azure Container Registry","Run it on Container Apps with a KEDA scale rule","Create a small AKS cluster, deploy the same image, then delete the cluster","Write down when you would choose Container Apps vs AKS"]],
+  ["7","Containers",["Build an image and push it to Azure Container Registry","Run it on Container Apps with a KEDA scale rule","Create a small AKS cluster, deploy the same image, then delete the cluster","Write down when you would choose Container Apps vs AKS","Do Lab 3 and read Chapter 9 (Containers & Kubernetes)"]],
   ["8","Data services",["Create Azure SQL Database (serverless) with Entra-only auth and connect from your app","Create a Cosmos DB for NoSQL account; experiment with partition keys and watch RU charges","Learn the five Cosmos DB consistency levels","Configure a blob lifecycle policy that moves data to Cool after 30 days"]],
   ["9","Messaging and integration",["Build Pattern C from Chapter 5 at small scale: Blob → Event Grid → Function → Service Bus","Force a failure and inspect the dead-letter queue","Put API Management (Developer or Consumption tier) in front of your API with a rate-limit policy","Read the Service Bus vs Event Grid vs Event Hubs comparison until you can explain it from memory"]],
-  ["10","Monitoring, security and governance",["Send diagnostic settings from Key Vault and your app to one Log Analytics workspace","Write the four KQL queries from Chapter 9 against your own data","Create a metric alert with an action group that emails you","Review Defender for Cloud's secure score and fix two recommendations","Assign an Azure Policy that denies resources outside your allowed regions"]],
-  ["11","CI/CD and IaC at work",["Create a GitHub Actions or Azure DevOps pipeline that deploys your Bicep with OIDC (no secrets)","Add a what-if step and a manual approval before prod","Read your team's real IaC repo and pipeline; list every service it deploys","Try azd up with one Azure-Samples template"]],
+  ["10","Monitoring, security and governance",["Send diagnostic settings from Key Vault and your app to one Log Analytics workspace","Write the four KQL queries from Chapter 10 against your own data","Create a metric alert with an action group that emails you","Review Defender for Cloud's secure score and fix two recommendations","Assign an Azure Policy that denies resources outside your allowed regions"]],
+  ["11","CI/CD and IaC at work",["Create a GitHub Actions or Azure DevOps pipeline that deploys your Bicep with OIDC (no secrets)","Add a what-if step and a manual approval before prod","Read your team's real IaC repo and pipeline; list every service it deploys","Try azd up with one Azure-Samples template","Do Lab 4: Bicep from GitHub Actions with OIDC"]],
   ["12","Architecture and next steps",["Draw your team's production architecture and label every service with its purpose","Review it against the five Well-Architected pillars","Pick your next cert (AZ-104 is the usual choice) and schedule it","Tear down all lab resources and confirm the cost in Cost Management"]]
 ];
 const KEY = "azure-field-guide-plan";
@@ -1319,9 +1792,17 @@ const G = [
   ["SLA","Service level agreement, the uptime Microsoft commits to. Composite SLAs multiply, so chained services lower overall availability."],
   ["TPM","Tokens per minute, the quota unit for Azure OpenAI model deployments."],
   ["UDR","User-defined route, a custom route table entry that overrides Azure's system routes."],
+  ["ACR","Azure Container Registry, where your container images live."],
+  ["Cold start","Delay on the first request after an app has scaled to zero while a new instance starts."],
+  ["Helm","Package manager for Kubernetes; a chart is a templated bundle of manifests."],
+  ["Idempotent","Safe to run twice with the same result. Deployments and message handlers should be."],
+  ["Ingress","Kubernetes rules that route outside HTTP traffic to services inside a cluster."],
+  ["Namespace","A folder inside a Kubernetes cluster that separates teams or apps."],
+  ["Pod","The smallest unit Kubernetes runs: one or more containers sharing a network address."],
+  ["Revision","An immutable snapshot of a Container App's config; traffic can be split between revisions."],
   ["What-if","Preview of what a Bicep/ARM deployment will change before you run it."]
 ];
-document.getElementById("gloss").innerHTML = G.map(([t,d])=>`<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
+document.getElementById("gloss").innerHTML = G.sort((a,b)=>a[0].localeCompare(b[0])).map(([t,d])=>`<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
 
 // nav highlighting + mobile jump
 const links = [...document.querySelectorAll("#toc a")];
