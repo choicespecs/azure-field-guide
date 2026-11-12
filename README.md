@@ -23,6 +23,6 @@ A single-page working reference for Microsoft Azure, for developers and infrastr
 
 ## Editing
 
-Everything lives in `index.html` (no build step). Service catalog entries are in the `S` array in the script at the bottom; the glossary is in `G`. Push to `main` and GitHub Pages republishes automatically.
+No build step. Each chapter is its own page (`catalog.html`, `identity.html`, …); `index.html` is the contents page. Shared styles are in `assets/style.css` and shared scripts in `assets/site.js`: service catalog entries are in the `S` array and the glossary is in `G`. The sidebar is repeated in every page, so edit it in all of them when you add a chapter. Push to `main` and GitHub Pages republishes automatically.
 
 Content reflects Azure as of October 2026. When this guide and Microsoft Learn disagree, trust Learn.

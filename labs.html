@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Five end-to-end examples of common setups. Each one creates its own resource group so you can delete everything with one command at the end. Run them…">
+<title>Walkthroughs — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a aria-current="page" class="on" href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Walkthroughs</div>
+<section id="labs">
+      <header><span class="eyebrow">Chapter 12</span><h2>Walkthroughs</h2>
+        <p class="lede">Five end-to-end examples of common setups. Each one creates its own resource group so you can delete everything with one command at the end. Run them in a bash shell (macOS Terminal, WSL or Cloud Shell) after <code>az login</code>.</p></header>
+      <div class="callout"><b>Before you start:</b> use a personal or sandbox subscription, not your employer's production one. Each walkthrough lists rough cost; most cost cents if you delete them the same day. Set <code>LOC</code> to a region near you that your subscription allows.</div>
+
+      <div class="weeks">
+        <details class="week" open>
+          <summary><h3>1 · Web app that reads a Key Vault secret with managed identity</h3><span class="wk">~45 min · B1 plan</span></summary>
+          <div class="body">
+            <p>Deploys a Flask app to App Service with a managed identity that reads a secret from Key Vault through an app setting, with no password anywhere.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 1: create the resources</span><button class="copy" type="button">Copy</button></div>
+<pre>RG=rg-lab1; LOC=eastus2; SFX=$RANDOM
+APP=app-lab1-$SFX; KV=kv-lab1-$SFX
+
+az group create -n $RG -l $LOC
+az appservice plan create -n plan-lab1 -g $RG --sku B1 --is-linux
+az webapp create -n $APP -g $RG -p plan-lab1 --runtime "PYTHON:3.12"
+
+<span class="c"># turn on a system-assigned managed identity</span>
+az webapp identity assign -n $APP -g $RG
+APP_PRINCIPAL=$(az webapp identity show -n $APP -g $RG --query principalId -o tsv)
+
+<span class="c"># Key Vault using Azure RBAC for permissions</span>
+az keyvault create -n $KV -g $RG -l $LOC --enable-rbac-authorization true
+KV_ID=$(az keyvault show -n $KV --query id -o tsv)
+ME=$(az ad signed-in-user show --query id -o tsv)
+
+<span class="c"># you can write secrets; the app can only read them</span>
+az role assignment create --assignee $ME --role "Key Vault Secrets Officer" --scope $KV_ID
+az role assignment create --assignee-object-id $APP_PRINCIPAL \
+  --assignee-principal-type ServicePrincipal \
+  --role "Key Vault Secrets User" --scope $KV_ID
+
+<span class="c"># role assignments take a minute or two to apply</span>
+sleep 60
+az keyvault secret set --vault-name $KV -n Greeting --value "hello from Key Vault"
+
+<span class="c"># app setting that points at the secret</span>
+az webapp config appsettings set -n $APP -g $RG \
+  --settings "GREETING=@Microsoft.KeyVault(VaultName=$KV;SecretName=Greeting)"</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 2: write and deploy the app</span><button class="copy" type="button">Copy</button></div>
+<pre>mkdir lab1 &amp;&amp; cd lab1
+printf 'flask\ngunicorn\n' &gt; requirements.txt
+cat &gt; app.py &lt;&lt;'PY'
+import os
+from flask import Flask
+app = Flask(__name__)
+
+@app.get("/")
+def index():
+    return os.environ.get("GREETING", "GREETING is not set")
+PY
+
+az webapp up -n $APP -g $RG --runtime "PYTHON:3.12"
+curl https://$APP.azurewebsites.net</pre></div>
+            <p><b>Verify:</b> the page prints "hello from Key Vault". In the portal, open the app → <i>Settings → Environment variables</i>; the GREETING row shows a green Key Vault reference status. If it shows an error, the role assignment hadn't applied yet: restart the app after a minute.</p>
+            <p><b>What failure looks like:</b> if the identity loses its role, the app receives the raw <code>@Microsoft.KeyVault(...)</code> text instead of the secret value.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait
+<span class="c"># Key Vault soft-deletes; purge it so the name can be reused</span>
+az keyvault purge -n $KV</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>2 · Lock a storage account behind a private endpoint</h3><span class="wk">~40 min · B1s VM</span></summary>
+          <div class="body">
+            <p>Builds a VNet and puts a storage account behind a private endpoint with public access off. DNS resolves to a private IP from inside the VNet but not from your laptop.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Build it</span><button class="copy" type="button">Copy</button></div>
+<pre>RG=rg-lab2; LOC=eastus2; ST=stlab2$RANDOM
+ZONE=privatelink.blob.core.windows.net
+
+az group create -n $RG -l $LOC
+az network vnet create -g $RG -n vnet-lab2 --address-prefix 10.10.0.0/16 \
+  --subnet-name snet-vm --subnet-prefixes 10.10.1.0/24
+az network vnet subnet create -g $RG --vnet-name vnet-lab2 \
+  -n snet-pe --address-prefixes 10.10.2.0/24
+
+<span class="c"># storage with no public network access</span>
+az storage account create -n $ST -g $RG -l $LOC --sku Standard_LRS \
+  --public-network-access Disabled --allow-blob-public-access false
+ST_ID=$(az storage account show -n $ST -g $RG --query id -o tsv)
+
+<span class="c"># private endpoint for the blob service</span>
+az network private-endpoint create -g $RG -n pe-$ST \
+  --vnet-name vnet-lab2 --subnet snet-pe \
+  --private-connection-resource-id $ST_ID --group-id blob --connection-name blob-conn
+
+<span class="c"># private DNS so the normal name resolves to the private IP</span>
+az network private-dns zone create -g $RG -n $ZONE
+az network private-dns link vnet create -g $RG -n link-lab2 -z $ZONE -v vnet-lab2 -e false
+az network private-endpoint dns-zone-group create -g $RG --endpoint-name pe-$ST \
+  -n default --private-dns-zone $ZONE --zone-name blob
+
+<span class="c"># a VM with no public IP to test from</span>
+az vm create -g $RG -n vm-lab2 --image Ubuntu2204 --size Standard_B1s \
+  --vnet-name vnet-lab2 --subnet snet-vm --public-ip-address "" \
+  --admin-username azureuser --generate-ssh-keys</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Prove it</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># from your laptop: public answer, and requests are refused</span>
+nslookup $ST.blob.core.windows.net
+
+<span class="c"># from inside the VNet: a 10.10.2.x address</span>
+az vm run-command invoke -g $RG -n vm-lab2 --command-id RunShellScript \
+  --scripts "nslookup $ST.blob.core.windows.net"</pre></div>
+            <p><b>Verify:</b> inside the VNet the name resolves through <code>{name}.privatelink.blob.core.windows.net</code> to a 10.10.2.x address. Without the DNS zone link, the VM resolves the public IP and the connection fails. That's the most common private-endpoint bug.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>3 · Container Apps that scale to zero</h3><span class="wk">~30 min · pay per use</span></summary>
+          <div class="body">
+            <p>Runs a public container on Container Apps with an HTTP scale rule: replicas appear under load and drop to zero when idle.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Deploy and scale</span><button class="copy" type="button">Copy</button></div>
+<pre>az extension add --name containerapp --upgrade
+az provider register -n Microsoft.App --wait
+az provider register -n Microsoft.OperationalInsights --wait
+
+RG=rg-lab3; LOC=eastus2
+az group create -n $RG -l $LOC
+
+<span class="c"># creates the environment, Log Analytics workspace and app in one go</span>
+az containerapp up -n ca-lab3 -g $RG -l $LOC \
+  --image mcr.microsoft.com/k8se/quickstart:latest \
+  --target-port 80 --ingress external
+
+<span class="c"># scale between 0 and 5 replicas, 10 concurrent requests each</span>
+az containerapp update -n ca-lab3 -g $RG \
+  --min-replicas 0 --max-replicas 5 \
+  --scale-rule-name http-rule --scale-rule-type http \
+  --scale-rule-http-concurrency 10
+
+URL=https://$(az containerapp show -n ca-lab3 -g $RG \
+  --query properties.configuration.ingress.fqdn -o tsv)
+echo $URL</pre></div>
+            <div class="code"><div class="cap"><span class="eyebrow">Generate load and watch</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># terminal 1: send ~500 requests in parallel batches</span>
+for i in $(seq 1 10); do
+  for j in $(seq 1 50); do curl -s -o /dev/null $URL &amp; done; wait
+done
+
+<span class="c"># terminal 2: watch replicas</span>
+watch -n 5 "az containerapp replica list -n ca-lab3 -g $RG -o table"
+
+<span class="c"># revisions: each config change makes a new one</span>
+az containerapp revision list -n ca-lab3 -g $RG -o table</pre></div>
+            <p><b>Verify:</b> replicas climb above 1 under load, then drop to 0 a few minutes after the load stops. The next request after that is slower; that's a cold start. Then find the app's logs in its Log Analytics workspace with <code>ContainerAppConsoleLogs_CL | take 20</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n $RG --yes --no-wait</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>4 · Deploy Bicep from GitHub Actions with no secrets</h3><span class="wk">~45 min · storage only</span></summary>
+          <div class="body">
+            <p>Creates an Entra app that trusts a GitHub repo through OIDC, grants it Contributor on one resource group, and deploys a Bicep file on every push to <code>main</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Step 1: identity and trust (run once)</span><button class="copy" type="button">Copy</button></div>
+<pre>REPO=your-github-user/your-repo     <span class="c"># change this</span>
+RG=rg-lab4; LOC=eastus2
+
+az group create -n $RG -l $LOC
+APP_ID=$(az ad app create --display-name gh-lab4-deployer --query appId -o tsv)
+az ad sp create --id $APP_ID
+
+<span class="c"># least privilege: Contributor on this one resource group only</span>
+az role assignment create --assignee $APP_ID --role Contributor \
+  --scope $(az group show -n $RG --query id -o tsv)
+
+<span class="c"># trust tokens from pushes to main in your repo</span>
+az ad app federated-credential create --id $APP_ID --parameters "{
+  \"name\": \"gh-main\",
+  \"issuer\": \"https://token.actions.githubusercontent.com\",
+  \"subject\": \"repo:$REPO:ref:refs/heads/main\",
+  \"audiences\": [\"api://AzureADTokenExchange\"]
+}"
+
+<span class="c"># store the IDs as repo variables (they are not secrets)</span>
+gh variable set AZURE_CLIENT_ID -R $REPO -b $APP_ID
+gh variable set AZURE_TENANT_ID -R $REPO -b $(az account show --query tenantId -o tsv)
+gh variable set AZURE_SUBSCRIPTION_ID -R $REPO -b $(az account show --query id -o tsv)</pre></div>
+            <div class="cols">
+              <div class="code"><div class="cap"><span class="eyebrow">infra/main.bicep</span><button class="copy" type="button">Copy</button></div>
+<pre>param location string = resourceGroup().location
+
+resource st 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'stlab4${uniqueString(resourceGroup().id)}'
+  location: location
+  sku: { name: 'Standard_LRS' }
+  kind: 'StorageV2'
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+  }
+  tags: { lab: '4', deployedBy: 'github-actions' }
+}
+
+output name string = st.name</pre></div>
+              <div class="code"><div class="cap"><span class="eyebrow">.github/workflows/deploy.yml</span><button class="copy" type="button">Copy</button></div>
+<pre>name: deploy-infra
+on:
+  push:
+    branches: [main]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - run: az deployment group what-if -g rg-lab4 -f infra/main.bicep
+      - run: az deployment group create -g rg-lab4 -f infra/main.bicep</pre></div>
+            </div>
+            <p><b>Verify:</b> push to <code>main</code>, open the Actions tab, and confirm the what-if step lists the storage account as "Create". Run it again and what-if shows "NoChange". Bicep deployments are idempotent.</p>
+            <p><b>Gotcha:</b> the federated credential's <code>subject</code> must match exactly how the job runs. If you add <code>environment: prod</code> to the job, the subject becomes <code>repo:OWNER/REPO:environment:prod</code> and you need a second credential. The error is <code>AADSTS700213: No matching federated identity record found</code>.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Clean up</span><button class="copy" type="button">Copy</button></div>
+<pre>az group delete -n rg-lab4 --yes --no-wait
+az ad app delete --id $APP_ID</pre></div>
+          </div>
+        </details>
+
+        <details class="week">
+          <summary><h3>5 · KQL against the free demo workspace</h3><span class="wk">~30 min · free</span></summary>
+          <div class="body">
+            <p>Microsoft hosts a demo Log Analytics workspace full of sample telemetry. Open it from the <a href="https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-tutorial" target="_blank" rel="noopener">Log Analytics tutorial</a> to try these query patterns.</p>
+            <div class="code"><div class="cap"><span class="eyebrow">Five KQL patterns</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c">// 1 look at a table: always start small</span>
+AppRequests | take 10
+
+<span class="c">// 2 filter rows and pick columns</span>
+AppRequests
+| where TimeGenerated &gt; ago(1h) and Success == false
+| project TimeGenerated, Name, ResultCode, DurationMs
+
+<span class="c">// 3 aggregate</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d)
+| summarize requests = count(), avgMs = avg(DurationMs) by Name
+| top 10 by requests
+
+<span class="c">// 4 time series and a chart</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d)
+| summarize count() by bin(TimeGenerated, 15m), Success
+| render timechart
+
+<span class="c">// 5 join requests to the exceptions they caused</span>
+AppRequests
+| where TimeGenerated &gt; ago(1d) and Success == false
+| join kind=inner (AppExceptions | project OperationId, ExceptionType, OuterMessage) on OperationId
+| summarize count() by Name, ExceptionType
+| order by count_ desc</pre></div>
+            <p><b>Note:</b> each <code>|</code> passes the previous result to the next operator. Query 4's shape (filter, <code>bin</code> by time, count) is the same one a log alert rule uses.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="waf.html"><small>← Previous</small>Well-Architected</a><a class="next" href="onboarding.html"><small>Next →</small>Mapping an environment</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

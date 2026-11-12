@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="What changes when your code runs in Azure: how it authenticates, where config lives, how you run things locally, how it ships, and how it stays…">
+<title>Building apps — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a aria-current="page" class="on" href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Building apps</div>
+<section id="dev">
+      <header><span class="track dev">Developer</span><span class="eyebrow">Chapter 7</span><h2>Building apps on Azure</h2>
+        <p class="lede">What changes when your code runs in Azure: how it authenticates, where config lives, how you run things locally, how it ships, and how it stays observable. Examples are in Python; every pattern has a direct equivalent in .NET, JavaScript and Java.</p></header>
+
+      <h3>1. How your code talks to Azure services</h3>
+      <div class="prose"><p>Use the official Azure SDK packages (<code>azure-*</code> in Python, <code>Azure.*</code> in .NET, <code>@azure/*</code> in JavaScript). Authenticate with <b>DefaultAzureCredential</b>. On your laptop it uses your <code>az login</code> session; in Azure it uses the app's managed identity. The same code works in both places, with no keys anywhere.</p></div>
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">Storage + Key Vault with no secrets</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># pip install azure-identity azure-storage-blob azure-keyvault-secrets</span>
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+from azure.keyvault.secrets import SecretClient
+
+<span class="c"># az login locally, managed identity in Azure</span>
+cred = DefaultAzureCredential()
+
+blobs = BlobServiceClient(
+    "https://stdemodev.blob.core.windows.net", credential=cred)
+uploads = blobs.get_container_client("uploads")
+uploads.upload_blob("hello.txt", b"hi", overwrite=True)
+
+secrets = SecretClient(
+    "https://kv-demo-dev.vault.azure.net", credential=cred)
+api_key = secrets.get_secret("ThirdPartyApiKey").value</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">Service Bus send + receive</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># pip install azure-servicebus azure-identity</span>
+from azure.identity import DefaultAzureCredential
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+ns = "sb-demo-dev.servicebus.windows.net"
+with ServiceBusClient(ns, DefaultAzureCredential()) as sb:
+    with sb.get_queue_sender("orders") as sender:
+        sender.send_messages(ServiceBusMessage('{"orderId": 123}'))
+
+    with sb.get_queue_receiver("orders", max_wait_time=5) as rx:
+        for msg in rx:
+            print(str(msg))
+            rx.complete_message(msg)  <span class="c"># or abandon / dead-letter</span></pre></div>
+      </div>
+      <div class="callout"><b>The most common auth error:</b> <code>AuthorizationPermissionMismatch</code> or <code>403</code> while using DefaultAzureCredential. Your identity can sign in but has no <i>data-plane</i> role. Ask for (or assign) the right one, e.g. <code>Storage Blob Data Contributor</code>, <code>Key Vault Secrets User</code>, <code>Azure Service Bus Data Sender</code>. Role assignments can take a few minutes to apply.</div>
+
+      <h3>2. The local development loop</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Tool</th><th>What it gives you</th><th>Tip</th></tr></thead>
+        <tbody>
+          <tr><td>Azure CLI login</td><td>Your identity for DefaultAzureCredential on your laptop</td><td>Run <code>az login</code> then <code>az account show</code> to confirm the right tenant and subscription</td></tr>
+          <tr><td>Azurite</td><td>Local emulator for Blob, Queue and Table storage</td><td>Runs as an npm package, Docker image or VS Code extension. Uses <code>UseDevelopmentStorage=true</code></td></tr>
+          <tr><td>Functions Core Tools</td><td><code>func start</code> runs Functions locally with real triggers</td><td>Local settings live in <code>local.settings.json</code>. Keep it out of git.</td></tr>
+          <tr><td>Cosmos DB emulator</td><td>Local Cosmos DB for NoSQL</td><td>Docker image on Linux/macOS</td></tr>
+          <tr><td>Service Bus / Event Hubs emulators</td><td>Local brokers in Docker</td><td>Good for unit and integration tests; not every feature is supported</td></tr>
+          <tr><td>SQL Server in Docker</td><td>Local relational database matching Azure SQL's engine</td><td>Test migrations here before running them against Azure SQL</td></tr>
+          <tr><td>Dev Tunnels</td><td>Public HTTPS URL that forwards to your localhost</td><td>Testing webhooks from Event Grid or third parties</td></tr>
+          <tr><td><code>azd</code></td><td><code>azd up</code> provisions infra and deploys code; <code>azd down</code> deletes it</td><td>Great for spinning up a personal dev environment from a template</td></tr>
+        </tbody></table></div>
+
+      <h3>3. Configuration and secrets</h3>
+      <div class="cols">
+        <div class="panel"><h4>App settings are environment variables</h4><p>In App Service, Functions and Container Apps, the settings you configure show up in your code as environment variables, e.g. <code>os.environ["QUEUE_NAME"]</code>. Keep non-secret config here.</p></div>
+        <div class="panel"><h4>Key Vault references</h4><p>Point an app setting at a secret and the platform fetches it with the app's managed identity:</p><p><code>@Microsoft.KeyVault(VaultName=kv-demo;SecretName=DbPassword)</code></p><p>Your code still just reads an env var.</p></div>
+        <div class="panel"><h4>App Configuration</h4><p>For config shared across many services, or <b>feature flags</b> you want to flip without redeploying. It can hold Key Vault references too.</p></div>
+        <div class="panel"><h4>Best of all: no secret at all</h4><p>Azure SQL, Storage, Service Bus, Cosmos DB, Event Hubs, Key Vault and Azure OpenAI all accept Entra tokens. If a service supports managed identity, use it and skip the connection-string password.</p></div>
+      </div>
+
+      <h3>4. Shipping code</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Target</th><th>How code gets there</th><th>Safe-release feature</th></tr></thead>
+        <tbody>
+          <tr><td>App Service</td><td>Zip deploy, GitHub Actions <code>azure/webapps-deploy</code>, Azure Pipelines task, or a container image</td><td><b>Deployment slots</b>: deploy to <code>staging</code>, warm up, then swap to production. Swap back to roll back.</td></tr>
+          <tr><td>Functions</td><td><code>func azure functionapp publish</code>, Actions, Pipelines, or a container</td><td>Slots on Premium/Dedicated plans</td></tr>
+          <tr><td>Container Apps</td><td>Push an image to ACR, then update the app's image tag</td><td><b>Revisions</b> with traffic splitting, e.g. 90/10 canary</td></tr>
+          <tr><td>AKS</td><td>Image to ACR, then Helm charts or manifests via a pipeline or GitOps (Flux)</td><td>Rolling updates, readiness probes, blue/green via ingress</td></tr>
+          <tr><td>Static Web Apps</td><td>GitHub/Azure DevOps integration builds on every push</td><td>Automatic preview environments per pull request</td></tr>
+        </tbody></table></div>
+      <div class="code"><div class="cap"><span class="eyebrow">GitHub Actions: deploy infra + app with OIDC (no stored passwords)</span><button class="copy" type="button">Copy</button></div>
+<pre>name: deploy
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write    <span class="c"># lets the job request an OIDC token from GitHub</span>
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod  <span class="c"># add required reviewers on this environment in GitHub</span>
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}        <span class="c"># app registration with a federated credential</span>
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Preview infra changes
+        run: az deployment group what-if -g rg-demo-prod -f infra/main.bicep -p infra/main.prod.bicepparam
+
+      - name: Deploy infra
+        run: az deployment group create -g rg-demo-prod -f infra/main.bicep -p infra/main.prod.bicepparam
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: app-demo-prod
+          slot-name: staging
+          package: .</pre></div>
+
+      <h3>5. Making code cloud-ready</h3>
+      <div class="cols">
+        <div class="panel"><h4>Expect transient failures</h4><ul><li>Networks blip and services throttle (HTTP <code>429</code>, <code>503</code>). Azure SDKs retry with backoff by default; don't wrap them in a second retry loop.</li><li>Set timeouts on every outbound call.</li><li>Make message handlers <b>idempotent</b>: the same message may arrive twice.</li></ul></div>
+        <div class="panel"><h4>Be stateless</h4><ul><li>Instances get added, removed and restarted. Keep sessions in Redis or a database, files in Blob Storage, never on local disk.</li><li>Expose a <code>/health</code> endpoint and wire it to the platform's health check or probes.</li></ul></div>
+        <div class="panel"><h4>Instrument from day one</h4><p>Add the Azure Monitor OpenTelemetry distro and you get requests, dependencies, exceptions and logs in Application Insights:</p><p><code>from azure.monitor.opentelemetry import configure_azure_monitor</code><br><code>configure_azure_monitor()</code></p><p>It reads <code>APPLICATIONINSIGHTS_CONNECTION_STRING</code> from the environment.</p></div>
+        <div class="panel"><h4>Signing in your users</h4><ul><li><b>Workforce apps</b>: register the app in Entra ID and use <b>MSAL</b>, or turn on App Service's built-in auth ("Easy Auth") with no code.</li><li><b>Customer-facing apps</b>: Entra External ID.</li><li>APIs validate the token's audience and scopes; API Management can do this at the gateway.</li></ul></div>
+      </div>
+
+      <h3>Developer gotchas</h3>
+      <div class="gotchas">
+        <div><b>Works locally, 403 in Azure</b><p>Locally you used your own identity; in Azure the app's managed identity is used, and it lacks the role. Assign the role to the managed identity.</p></div>
+        <div><b>App can't reach the database after networking was locked down</b><p>Public access was disabled. The app needs VNet integration plus a private endpoint, and DNS must resolve to the private IP.</p></div>
+        <div><b>Settings changes restart the app</b><p>Changing App Service app settings restarts it. Use slots or App Configuration for live changes.</p></div>
+        <div><b>Functions run slowly at first</b><p>Cold start on consumption plans. Use Flex Consumption's always-ready instances or a Premium plan for latency-sensitive endpoints.</p></div>
+        <div><b>Cosmos DB bill is surprisingly high</b><p>Usually cross-partition queries or a hot partition key. Check RU charge per query in the response headers.</p></div>
+        <div><b>Time zones are wrong</b><p>Azure services run in UTC. Store and compare times in UTC; convert only for display.</p></div>
+      </div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="tooling.html"><small>← Previous</small>Tooling &amp; IaC</a><a class="next" href="infra.html"><small>Next →</small>Running the platform</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

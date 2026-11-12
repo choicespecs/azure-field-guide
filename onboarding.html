@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Every Azure estate is set up differently. The questions to answer about any environment you work in, and read-only commands that answer some of them…">
+<title>Mapping an environment — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a aria-current="page" class="on" href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Mapping an environment</div>
+<section id="onboarding">
+      <header><span class="eyebrow">Chapter 13</span><h2>Mapping an environment</h2>
+        <p class="lede">Every Azure estate is set up differently. The questions to answer about any environment you work in, and read-only commands that answer some of them directly.</p></header>
+
+      <div class="cols">
+        <div class="panel"><h3>Access</h3><ul>
+          <li>Which Entra tenant(s) and subscriptions will I work in?</li>
+          <li>How do I request access, and is it through PIM (just-in-time)?</li>
+          <li>Is there a sandbox subscription where I can experiment?</li>
+          <li>Which Entra groups should I be in?</li>
+          <li>Do I need a separate admin account for privileged work?</li>
+        </ul></div>
+        <div class="panel"><h3>How things ship</h3><ul>
+          <li>Where is the infrastructure code: Bicep, Terraform, or both?</li>
+          <li>Azure DevOps or GitHub? Where do pipelines live?</li>
+          <li>What environments exist, and how does a change reach prod?</li>
+          <li>Who approves production changes? Is there change management?</li>
+          <li>Are there internal modules or templates I should reuse?</li>
+        </ul></div>
+        <div class="panel"><h3>The platform</h3><ul>
+          <li>Is there a landing zone? Who owns the hub network?</li>
+          <li>What naming and tagging conventions do we use?</li>
+          <li>Which Azure Policies will block me (regions, SKUs, public IPs)?</li>
+          <li>Which services are approved, and which are off-limits?</li>
+          <li>Where do logs go, and which dashboards does on-call use?</li>
+          <li>Who owns cost, and are there budgets per team?</li>
+        </ul></div>
+      </div>
+
+      <div class="code"><div class="cap"><span class="eyebrow">Inventory an environment (read-only)</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># which tenants and subscriptions can I see?</span>
+az account list --query "[].{name:name, id:id, tenant:tenantId, default:isDefault}" -o table
+
+<span class="c"># what access do I actually have?</span>
+az role assignment list --assignee $(az ad signed-in-user show --query id -o tsv) --all \
+  --query "[].{role:roleDefinitionName, scope:scope}" -o table
+
+<span class="c"># management group tree (if you can read it)</span>
+az account management-group list -o table
+
+<span class="c"># what's deployed, by type, across everything I can see</span>
+az graph query -q "resources | summarize count() by type | order by count_ desc" --first 50 -o table
+
+<span class="c"># which resource groups exist and how are they tagged?</span>
+az group list --query "[].{name:name, location:location, tags:tags}" -o table
+
+<span class="c"># which policies apply to this subscription?</span>
+az policy assignment list --query "[].{name:displayName, scope:scope}" -o table</pre></div>
+
+      <div class="cols">
+        <div class="panel"><h3>Working habits</h3><ul>
+          <li>Keep a personal notes file of resource names, subscription IDs and who owns what.</li>
+          <li>Keep an up-to-date architecture diagram of each production app you touch.</li>
+          <li>Read the last few incident write-ups; they show where the system really breaks.</li>
+                    <li>Read an app's IaC before changing anything in the portal.</li>
+        </ul></div>
+        <div class="panel"><h3>Things to avoid</h3><ul>
+          <li>Creating resources in a production subscription to "try something".</li>
+          <li>Changing anything in the portal that is managed by IaC; the next deploy will revert it, or worse.</li>
+          <li>Regenerating storage or Cosmos DB keys: every app using the old key breaks.</li>
+          <li>Deleting resource groups you didn't create, even if they look abandoned.</li>
+          <li>Pasting connection strings, keys or tokens into chat, tickets or AI tools.</li>
+        </ul></div>
+      </div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="labs.html"><small>← Previous</small>Walkthroughs</a><a class="next" href="links.html"><small>Next →</small>Docs &amp; links</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

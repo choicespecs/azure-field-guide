@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The portal is for exploring. Real environments are built with code and pipelines: the CLI, an IaC language and a CI/CD system.">
+<title>Tooling &amp; IaC — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a aria-current="page" class="on" href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Tooling &amp; IaC</div>
+<section id="tooling">
+      <header><span class="eyebrow">Chapter 6</span><h2>Tooling &amp; infrastructure as code</h2>
+        <p class="lede">The portal is for exploring. Real environments are built with code and pipelines: the CLI, an IaC language and a CI/CD system.</p></header>
+
+      <div class="tablewrap"><table>
+        <thead><tr><th>Tool</th><th>What it is</th><th>When you use it</th></tr></thead>
+        <tbody>
+          <tr><td>Azure portal</td><td>Web UI at portal.azure.com</td><td>Exploring, troubleshooting, one-off checks. Every blade's "Export template" and JSON view teach you the underlying resource shape.</td></tr>
+          <tr><td>Azure CLI (<code>az</code>)</td><td>Cross-platform command line</td><td>Scripting, quick queries, CI pipelines. <code>--query</code> uses JMESPath to filter output.</td></tr>
+          <tr><td>Azure PowerShell (<code>Az</code>)</td><td>PowerShell module</td><td>Windows-heavy shops, object-pipeline scripting</td></tr>
+          <tr><td>Cloud Shell</td><td>Browser shell with CLI, PowerShell, Terraform, kubectl preinstalled</td><td>When you cannot install tools locally</td></tr>
+          <tr><td>Bicep</td><td>Microsoft's declarative IaC language; compiles to ARM JSON</td><td>Azure-only shops. Day-zero support for new resource types, no state file to manage.</td></tr>
+          <tr><td>ARM templates</td><td>The JSON format ARM natively understands</td><td>You will read them more than write them; Bicep replaced hand-written ARM.</td></tr>
+          <tr><td>Terraform (<code>azurerm</code>, <code>azapi</code>)</td><td>HashiCorp's multi-cloud IaC</td><td>Multi-cloud teams, existing Terraform expertise. Keep state in a locked storage account backend.</td></tr>
+          <tr><td>Azure Verified Modules (AVM)</td><td>Microsoft-maintained Bicep and Terraform modules</td><td>Starting points that follow Well-Architected defaults</td></tr>
+          <tr><td>Azure Developer CLI (<code>azd</code>)</td><td>App-centric workflow: <code>azd up</code> provisions infra + deploys code from templates</td><td>Spinning up full sample apps quickly; developer inner loop</td></tr>
+          <tr><td>Azure DevOps</td><td>Boards, Repos, Pipelines (YAML), Artifacts, Test Plans</td><td>Many enterprises run CI/CD here. Key pieces: YAML pipelines, service connections, environments and approvals.</td></tr>
+          <tr><td>GitHub Actions</td><td>CI/CD in GitHub with <code>azure/login</code> via OIDC federation</td><td>Modern default for new projects; no stored client secrets</td></tr>
+          <tr><td>Azure Resource Graph</td><td>KQL query engine across all your subscriptions' resources</td><td>Inventory questions: "every public IP in the company"</td></tr>
+          <tr><td>VS Code + Azure extensions</td><td>Bicep language server, Functions, Resources explorers</td><td>Daily editing; the Bicep extension's IntelliSense is the fastest way to discover resource properties</td></tr>
+        </tbody></table></div>
+
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">Azure CLI essentials</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># sign in and pick a subscription</span>
+az login
+az account list -o table
+az account set --subscription "My Sub"
+
+<span class="c"># resource groups and inventory</span>
+az group create -n rg-demo-dev -l eastus2
+az resource list -g rg-demo-dev -o table
+az resource list --query "[?type=='Microsoft.Web/sites'].name" -o tsv
+
+<span class="c"># deploy Bicep (what-if previews the diff)</span>
+az deployment group what-if -g rg-demo-dev -f main.bicep
+az deployment group create -g rg-demo-dev -f main.bicep -p env=dev
+
+<span class="c"># RBAC</span>
+az role assignment create --assignee &lt;objectId&gt; \
+  --role "Storage Blob Data Reader" --scope &lt;storageAccountId&gt;
+az role assignment list --assignee &lt;objectId&gt; --all -o table
+
+<span class="c"># everyday service commands</span>
+az webapp log tail -n app-demo -g rg-demo-dev
+az aks get-credentials -n aks-demo -g rg-demo-dev
+az keyvault secret show --vault-name kv-demo -n DbPassword
+az group delete -n rg-demo-dev --yes --no-wait</pre></div>
+
+        <div class="code"><div class="cap"><span class="eyebrow">Bicep: storage + managed identity access</span><button class="copy" type="button">Copy</button></div>
+<pre>param location string = resourceGroup().location
+param env string
+param appPrincipalId string
+
+resource st 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'stdemo${env}${uniqueString(resourceGroup().id)}'
+  location: location
+  sku: { name: env == 'prod' ? 'Standard_ZRS' : 'Standard_LRS' }
+  kind: 'StorageV2'
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+    allowSharedKeyAccess: false   <span class="c">// force Entra auth</span>
+  }
+}
+
+<span class="c">// Storage Blob Data Reader (built-in role ID)</span>
+var blobReader = '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+
+resource ra 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: st
+  name: guid(st.id, appPrincipalId, blobReader)
+  properties: {
+    principalId: appPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions', blobReader)
+  }
+}
+
+output blobEndpoint string = st.properties.primaryEndpoints.blob</pre></div>
+      </div>
+
+      <div class="callout"><b>Naming convention:</b> most teams use the Cloud Adoption Framework pattern <code>&lt;type&gt;-&lt;workload&gt;-&lt;env&gt;-&lt;region&gt;-&lt;nnn&gt;</code>, e.g. <code>rg-payments-prod-eus2-001</code>, <code>kv-payments-prod-eus2</code>. Some resources (storage accounts, ACR) allow only lowercase letters and digits and must be globally unique. Ask your team what convention they use before creating anything.</div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="patterns.html"><small>← Previous</small>How it fits together</a><a class="next" href="dev.html"><small>Next →</small>Building apps</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Four shapes cover most real-world Azure systems. Each flow reads top to bottom, with every service named.">
+<title>How it fits together — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a aria-current="page" class="on" href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / How it fits together</div>
+<section id="patterns">
+      <header><span class="eyebrow">Chapter 5</span><h2>How it fits together</h2>
+        <p class="lede">Four shapes cover most real-world Azure systems. Each flow reads top to bottom, with every service named.</p></header>
+
+      <div class="arch">
+        <span class="eyebrow">Pattern A</span><h3>Secure web app with a database</h3>
+<pre class="mermaid">
+flowchart LR
+  U[Users] --> FD[Front Door + WAF]
+  FD -->|Private Link| APP[App Service / Container Apps]
+  APP -->|Managed identity| KV[Key Vault]
+  APP -->|Private endpoint| SQL[(Azure SQL)]
+  APP -->|Private endpoint| ST[(Blob Storage)]
+  APP -.telemetry.-> AI[Application Insights]
+  AI --> LA[Log Analytics]
+</pre>
+        <ol class="flow">
+          <li>DNS points at <b>Front Door</b>, which terminates TLS at the edge, applies WAF rules and caches static content.</li>
+          <li>Front Door reaches the app privately. The app has public access disabled.</li>
+          <li>The app's <b>managed identity</b> fetches secrets from <b>Key Vault</b> and authenticates to SQL and Storage with Entra tokens, so there are no connection-string passwords.</li>
+          <li>Outbound calls go through <b>VNet integration</b> to <b>private endpoints</b>; Private DNS zones resolve the service names to private IPs.</li>
+          <li><b>Application Insights</b> collects requests, dependencies and exceptions into a <b>Log Analytics</b> workspace.</li>
+        </ol>
+      </div>
+
+      <div class="arch">
+        <span class="eyebrow">Pattern B</span><h3>Hub-and-spoke network (landing zone)</h3>
+<pre class="mermaid">
+flowchart TB
+  OP[On-premises] ---|ExpressRoute / VPN| GW
+  subgraph HUB[Hub VNet - connectivity subscription]
+    GW[VPN / ER Gateway]
+    FW[Azure Firewall]
+    BAS[Bastion]
+    DNS[DNS Private Resolver]
+  end
+  subgraph S1[Spoke: App A prod]
+    A1[App subnet]
+    D1[Data subnet]
+  end
+  subgraph S2[Spoke: App B prod]
+    A2[AKS subnet]
+  end
+  HUB <-->|peering| S1
+  HUB <-->|peering| S2
+  A1 -.UDR 0.0.0.0/0.-> FW
+  A2 -.UDR 0.0.0.0/0.-> FW
+</pre>
+        <ol class="flow">
+          <li>A central <b>hub</b> VNet holds shared services: gateways to on-prem, <b>Azure Firewall</b>, <b>Bastion</b> for admin access, and DNS.</li>
+          <li>Each workload gets its own <b>spoke</b> VNet, usually in its own subscription, peered to the hub.</li>
+          <li><b>User-defined routes</b> send spoke traffic through the firewall, so spoke-to-spoke and internet egress is inspected centrally.</li>
+          <li><b>NSGs</b> filter traffic at the subnet or NIC level; the firewall does centralized L3–L7 filtering.</li>
+          <li><b>Virtual WAN</b> is the managed alternative when you have many regions or branches.</li>
+        </ol>
+      </div>
+
+      <div class="arch">
+        <span class="eyebrow">Pattern C</span><h3>Event-driven processing</h3>
+<pre class="mermaid">
+flowchart LR
+  UP[Client upload] --> BLOB[(Blob Storage)]
+  BLOB -->|BlobCreated| EG[Event Grid]
+  EG --> FN[Function: validate]
+  FN -->|command| SB[Service Bus queue]
+  SB --> W[Container Apps job: process]
+  W --> COS[(Cosmos DB)]
+  COS -->|change feed| FN2[Function: notify]
+  SB -.failures.-> DLQ[Dead-letter queue]
+</pre>
+        <ol class="flow">
+          <li>A file lands in <b>Blob Storage</b>; Storage publishes a <code>BlobCreated</code> event to <b>Event Grid</b>.</li>
+          <li>A <b>Function</b> validates it and drops a durable command on a <b>Service Bus</b> queue.</li>
+          <li>A worker (Container Apps job, scaled by KEDA on queue length) does the heavy lifting and writes to <b>Cosmos DB</b>.</li>
+          <li>The Cosmos <b>change feed</b> triggers downstream reactions. Failed messages go to the dead-letter queue for inspection.</li>
+        </ol>
+      </div>
+
+      <div class="arch">
+        <span class="eyebrow">Pattern D</span><h3>Data and AI platform</h3>
+<pre class="mermaid">
+flowchart LR
+  SRC[Apps, SaaS, on-prem DBs] --> ADF[Data Factory / Fabric pipelines]
+  IOT[Devices, logs] --> EH[Event Hubs]
+  ADF --> LAKE[(OneLake / ADLS Gen2)]
+  EH --> LAKE
+  LAKE --> SPARK[Databricks / Fabric Spark]
+  SPARK --> WH[Warehouse / Lakehouse]
+  WH --> PBI[Power BI]
+  LAKE --> SRCH[AI Search index]
+  SRCH --> FOUNDRY[Foundry: models + agents]
+  FOUNDRY --> APP2[Chat / copilot app]
+  PUR[Purview] -.catalog + lineage.-> LAKE
+</pre>
+        <ol class="flow">
+          <li>Batch sources come in through <b>Data Factory</b> or <b>Fabric</b> pipelines; streams come in through <b>Event Hubs</b>.</li>
+          <li>Everything lands in a data lake (<b>ADLS Gen2</b> or Fabric's <b>OneLake</b>) in open Delta/Parquet formats, usually in bronze/silver/gold layers.</li>
+          <li><b>Spark</b> (Databricks or Fabric) cleans and models the data; <b>Power BI</b> reports on it.</li>
+          <li>For generative AI, documents are chunked and embedded into <b>AI Search</b>; an app in <b>Microsoft Foundry</b> retrieves from it and calls a model (retrieval-augmented generation).</li>
+          <li><b>Purview</b> catalogs data, tracks lineage and applies sensitivity labels.</li>
+        </ol>
+      </div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="choose.html"><small>← Previous</small>Which one do I pick?</a><a class="next" href="tooling.html"><small>Next →</small>Tooling &amp; IaC</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

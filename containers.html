@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Containers show up in almost every Azure team, whether apps run on Container Apps, App Service or AKS. This chapter covers the vocabulary, the…">
+<title>Containers &amp; Kubernetes — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a aria-current="page" class="on" href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Containers &amp; Kubernetes</div>
+<section id="containers">
+      <header><span class="track dev">Developer</span><span class="track infra">Infrastructure</span><span class="eyebrow">Chapter 9</span><h2>Containers &amp; Kubernetes</h2>
+        <p class="lede">Containers show up in almost every Azure team, whether apps run on Container Apps, App Service or AKS. This chapter covers the vocabulary, the build-and-push loop, and enough Kubernetes to read your team's manifests.</p></header>
+
+      <h3>The vocabulary</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Term</th><th>What it means</th><th>Where it lives in Azure</th></tr></thead>
+        <tbody>
+          <tr><td>Image</td><td>A packaged app plus everything it needs to run, built from a <code>Dockerfile</code></td><td>Stored in Azure Container Registry (ACR)</td></tr>
+          <tr><td>Registry</td><td>A store of images, addressed as <code>registry/repo:tag</code></td><td><code>myacr.azurecr.io/orders-api:1.4.2</code></td></tr>
+          <tr><td>Container</td><td>A running instance of an image</td><td>Container Apps replica, App Service instance, AKS pod</td></tr>
+          <tr><td>Pod</td><td>Kubernetes' smallest unit: one or more containers sharing a network address</td><td>AKS</td></tr>
+          <tr><td>Deployment</td><td>Keeps N copies of a pod running and rolls out new versions</td><td>AKS (Container Apps does this for you with revisions)</td></tr>
+          <tr><td>Service</td><td>A stable internal address that load-balances across pods</td><td>AKS; <code>type: LoadBalancer</code> creates an Azure Load Balancer</td></tr>
+          <tr><td>Ingress / Gateway</td><td>HTTP routing from outside the cluster to services</td><td>App Routing add-on (NGINX), Application Gateway for Containers</td></tr>
+          <tr><td>Namespace</td><td>A folder inside a cluster for separating teams or apps</td><td>AKS</td></tr>
+          <tr><td>ConfigMap / Secret</td><td>Config and sensitive values injected into pods</td><td>Prefer Key Vault via the Secrets Store CSI driver</td></tr>
+          <tr><td>Node pool</td><td>The VMs that run pods; system pools run cluster services, user pools run your apps</td><td>VM Scale Sets managed by AKS</td></tr>
+          <tr><td>Helm chart</td><td>A templated, versioned package of Kubernetes manifests</td><td>Often stored in ACR as OCI artifacts</td></tr>
+          <tr><td>Workload identity</td><td>Lets a pod use a managed identity to call Azure services with no secrets</td><td>AKS with OIDC issuer enabled</td></tr>
+        </tbody></table></div>
+
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">Dockerfile for a small Flask API</span><button class="copy" type="button">Copy</button></div>
+<pre>FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+<span class="c"># run as a non-root user</span>
+RUN useradd -m appuser
+USER appuser
+
+EXPOSE 8000
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">Build in the cloud, push to ACR</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># create a registry (name must be globally unique, letters/digits)</span>
+az acr create -g rg-demo-dev -n acrdemodev$RANDOM --sku Basic
+
+<span class="c"># build remotely with ACR Tasks: no Docker needed locally</span>
+az acr build -r &lt;acrName&gt; -t orders-api:1.0.0 .
+
+<span class="c"># list what's in the registry</span>
+az acr repository list -n &lt;acrName&gt; -o table
+az acr repository show-tags -n &lt;acrName&gt; --repository orders-api
+
+<span class="c"># or build locally and push</span>
+az acr login -n &lt;acrName&gt;
+docker build -t &lt;acrName&gt;.azurecr.io/orders-api:1.0.0 .
+docker push &lt;acrName&gt;.azurecr.io/orders-api:1.0.0</pre></div>
+      </div>
+
+      <h3>Reading a Kubernetes manifest</h3>
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">deployment.yaml</span><button class="copy" type="button">Copy</button></div>
+<pre>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: orders
+spec:
+  replicas: 3                     <span class="c"># keep 3 pods running</span>
+  selector:
+    matchLabels: { app: orders-api }
+  template:
+    metadata:
+      labels:
+        app: orders-api
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: orders-api   <span class="c"># linked to a managed identity</span>
+      containers:
+        - name: api
+          image: acrdemodev.azurecr.io/orders-api:1.0.0
+          ports: [{ containerPort: 8000 }]
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  namespace: orders
+spec:
+  selector: { app: orders-api }
+  ports: [{ port: 80, targetPort: 8000 }]</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">AKS + kubectl essentials</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># small lab cluster that can pull from your registry</span>
+az aks create -g rg-demo-dev -n aks-demo \
+  --node-count 1 --node-vm-size Standard_B2s \
+  --attach-acr &lt;acrName&gt; \
+  --enable-oidc-issuer --enable-workload-identity \
+  --generate-ssh-keys
+
+<span class="c"># point kubectl at it</span>
+az aks install-cli               <span class="c"># if kubectl isn't installed</span>
+az aks get-credentials -g rg-demo-dev -n aks-demo
+
+<span class="c"># apply and inspect</span>
+kubectl create namespace orders
+kubectl apply -f deployment.yaml
+kubectl get pods -n orders -o wide
+kubectl describe pod &lt;pod&gt; -n orders    <span class="c"># events explain most failures</span>
+kubectl logs deploy/orders-api -n orders --tail=50
+kubectl port-forward svc/orders-api 8080:80 -n orders
+
+<span class="c"># roll out a new version and watch it</span>
+kubectl set image deploy/orders-api api=&lt;acr&gt;.azurecr.io/orders-api:1.0.1 -n orders
+kubectl rollout status deploy/orders-api -n orders
+kubectl rollout undo deploy/orders-api -n orders
+
+<span class="c"># stop paying for the lab</span>
+az aks stop -g rg-demo-dev -n aks-demo</pre></div>
+      </div>
+
+      <h3>Pod troubleshooting cheat sheet</h3>
+      <div class="gotchas">
+        <div><b><code>ImagePullBackOff</code></b><p>Wrong image name or tag, or the cluster can't authenticate to ACR. Check the tag exists and run <code>az aks check-acr -g &lt;rg&gt; -n &lt;aks&gt; --acr &lt;acr&gt;.azurecr.io</code>.</p></div>
+        <div><b><code>CrashLoopBackOff</code></b><p>The container starts then exits. Read <code>kubectl logs &lt;pod&gt; --previous</code>; usually a missing env var or a bad startup command.</p></div>
+        <div><b><code>Pending</code></b><p>No node has room. <code>kubectl describe pod</code> shows "Insufficient cpu/memory". Lower requests or scale the node pool.</p></div>
+        <div><b><code>OOMKilled</code></b><p>The container used more memory than its limit. Raise the limit or fix the leak.</p></div>
+        <div><b>Running but not receiving traffic</b><p>The readiness probe is failing, or the Service's <code>selector</code> doesn't match the pod labels. Check <code>kubectl get endpoints</code>.</p></div>
+        <div><b>403 calling Azure from a pod</b><p>Workload identity isn't wired up: the service account annotation, the federated credential on the managed identity, or the role assignment is missing.</p></div>
+      </div>
+
+      <div class="callout"><b>Same app, less platform:</b> everything above maps onto Container Apps without managing a cluster. A Deployment becomes a container app, a rollout becomes a revision, and HPA/KEDA scaling becomes a scale rule. The Kubernetes terms still matter, because Container Apps' docs and error messages use them.</div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="infra.html"><small>← Previous</small>Running the platform</a><a class="next" href="ops.html"><small>Next →</small>Monitoring &amp; ops</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

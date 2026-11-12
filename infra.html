@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The infrastructure side: planning networks, structuring IaC, promoting through environments, troubleshooting connectivity and keeping costs and…">
+<title>Running the platform — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a aria-current="page" class="on" href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Running the platform</div>
+<section id="infra">
+      <header><span class="track infra">Infrastructure</span><span class="eyebrow">Chapter 8</span><h2>Running the platform</h2>
+        <p class="lede">The infrastructure side: planning networks, structuring IaC, promoting through environments, troubleshooting connectivity and keeping costs and patches under control.</p></header>
+
+      <div class="cols">
+        <div class="panel"><h3>What the work usually is</h3><ul>
+          <li>Provisioning subscriptions, networks and shared services from code</li>
+          <li>Reviewing pull requests to IaC repos and pipelines</li>
+          <li>Granting and auditing access (RBAC, PIM requests)</li>
+          <li>"Why can't X reach Y?" network tickets</li>
+          <li>Patching, backups, DR tests</li>
+          <li>Cost reviews and cleanup</li>
+          <li>Responding to alerts and Defender for Cloud findings</li>
+        </ul></div>
+        <div class="panel"><h3>Environments and promotion</h3><ul>
+          <li>Separate <b>subscriptions</b> (or at least resource groups) for dev, test and prod, so a mistake in dev can't touch prod and costs stay visible.</li>
+          <li>The <b>same IaC</b> deploys every environment; only parameter files differ.</li>
+          <li>Pipelines promote dev → test → prod with what-if output and an approval gate before prod.</li>
+          <li>Nobody clicks changes into prod by hand. If they must in an emergency, fix the code afterward so the next deploy doesn't undo it (drift).</li>
+        </ul></div>
+      </div>
+
+      <h3>1. IP address planning</h3>
+      <p class="prose">Address ranges are painful to change later and must never overlap with on-premises networks or other VNets you might peer with. A small example plan:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>VNet / subnet</th><th>Range</th><th>Usable IPs</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>vnet-hub-prod</td><td>10.0.0.0/22</td><td>1,019</td><td>Shared connectivity services</td></tr>
+          <tr><td>· GatewaySubnet</td><td>10.0.0.0/27</td><td>27</td><td>Name is required exactly; VPN/ExpressRoute gateways</td></tr>
+          <tr><td>· AzureFirewallSubnet</td><td>10.0.0.64/26</td><td>59</td><td>Required name and minimum /26</td></tr>
+          <tr><td>· AzureBastionSubnet</td><td>10.0.0.128/26</td><td>59</td><td>Required name and minimum /26</td></tr>
+          <tr><td>vnet-app-prod</td><td>10.1.0.0/22</td><td>1,019</td><td>One workload spoke</td></tr>
+          <tr><td>· snet-app</td><td>10.1.0.0/26</td><td>59</td><td>Delegated to App Service for VNet integration</td></tr>
+          <tr><td>· snet-pe</td><td>10.1.0.64/26</td><td>59</td><td>Private endpoints for SQL, Storage, Key Vault</td></tr>
+          <tr><td>vnet-aks-prod</td><td>10.2.0.0/20</td><td>4,091</td><td>Kubernetes needs room to grow; overlay networking keeps pod IPs out of the VNet</td></tr>
+        </tbody></table></div>
+      <p class="prose" style="color:var(--muted);font-size:.9rem">Azure reserves 5 addresses in every subnet (the first four and the last), so a /27 gives 27 usable, not 32. Leave gaps between ranges for growth.</p>
+
+      <h3>2. Structuring infrastructure code</h3>
+      <div class="cols">
+        <div class="code"><div class="cap"><span class="eyebrow">Bicep: project layout + module wiring</span><button class="copy" type="button">Copy</button></div>
+<pre>infra/
+  main.bicep              <span class="c">// composes the modules</span>
+  main.dev.bicepparam     <span class="c">// per-environment values</span>
+  main.prod.bicepparam
+  modules/
+    network.bicep
+    app.bicep
+    data.bicep
+    monitoring.bicep
+
+<span class="c">// main.prod.bicepparam</span>
+using './main.bicep'
+param env = 'prod'
+param location = 'eastus2'
+param appSkuName = 'P1v3'
+
+<span class="c">// main.bicep</span>
+param env string
+param location string
+param appSkuName string
+
+module net 'modules/network.bicep' = {
+  name: 'network'
+  params: {
+    env: env
+    location: location
+    addressPrefix: '10.1.0.0/22'
+  }
+}
+
+module app 'modules/app.bicep' = {
+  name: 'app'
+  params: {
+    env: env
+    location: location
+    skuName: appSkuName
+    subnetId: net.outputs.appSubnetId  <span class="c">// outputs flow between modules</span>
+  }
+}</pre></div>
+        <div class="code"><div class="cap"><span class="eyebrow">Terraform: remote state + first resource</span><button class="copy" type="button">Copy</button></div>
+<pre>terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~&gt; 4.0"
+    }
+  }
+  <span class="c"># state lives in a locked-down storage account</span>
+  backend "azurerm" {
+    resource_group_name  = "rg-tfstate"
+    storage_account_name = "sttfstate001"
+    container_name       = "tfstate"
+    key                  = "app-demo/prod.tfstate"
+    use_azuread_auth     = true
+  }
+}
+
+provider "azurerm" {
+  features {}
+  <span class="c"># v4 needs a subscription: set here or via ARM_SUBSCRIPTION_ID</span>
+}
+
+resource "azurerm_resource_group" "rg" {
+  name     = "rg-demo-prod-eus2"
+  location = "eastus2"
+  tags = {
+    env   = "prod"
+    owner = "platform"
+  }
+}
+
+<span class="c"># terraform init → plan → apply</span></pre></div>
+      </div>
+      <div class="callout"><b>Bicep or Terraform?</b> Use whatever your team already uses. The concepts (modules, parameters, outputs, plan/what-if, environments) carry over directly. Bicep keeps no state file and gets new Azure features first. Terraform covers other clouds and SaaS, but you have to manage its state.</div>
+
+      <h3>3. Troubleshooting "X can't reach Y"</h3>
+      <div class="cols">
+        <ol class="flow">
+          <li><b>DNS.</b> Does the name resolve, and to the right IP? For a private endpoint you should get a <code>10.x</code> address, not a public one. Most private-networking problems are DNS problems.</li>
+          <li><b>Port reachable?</b> Test TCP from the source: <code>nc -vz host 1433</code> or <code>Test-NetConnection host -Port 1433</code>.</li>
+          <li><b>NSGs.</b> Check effective security rules on the source and destination NICs or subnets.</li>
+          <li><b>Routes.</b> Check effective routes; a UDR may send traffic to a firewall that drops it.</li>
+          <li><b>Firewall.</b> Search Azure Firewall logs for the source IP.</li>
+          <li><b>Service firewall.</b> The PaaS resource's own "Networking" settings may block public access or not list your subnet.</li>
+          <li><b>Identity.</b> If you connect but get 401/403, it's RBAC, not networking.</li>
+        </ol>
+        <div class="code"><div class="cap"><span class="eyebrow">Commands for each step</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c"># 1 DNS: expect a private 10.x IP for private endpoints</span>
+nslookup stdemoprod.blob.core.windows.net
+
+<span class="c"># 2 TCP reachability from the source machine</span>
+nc -vz sql-demo-prod.database.windows.net 1433
+
+<span class="c"># 3 effective NSG rules on a VM's NIC</span>
+az network nic list-effective-nsg -g rg-app-prod -n nic-vm01
+
+<span class="c"># 4 effective routes on that NIC</span>
+az network nic show-effective-route-table \
+  -g rg-app-prod -n nic-vm01 -o table
+
+<span class="c"># Network Watcher end-to-end check</span>
+az network watcher test-connectivity -g rg-app-prod \
+  --source-resource vm01 \
+  --dest-address sql-demo-prod.database.windows.net --dest-port 1433</pre></div>
+      </div>
+
+      <h3>4. Cost and hygiene</h3>
+      <div class="cols">
+        <div class="panel"><h4>Pay less for the same thing</h4><ul>
+          <li><b>Reservations</b> (1 or 3 years) for steady VMs, SQL and Cosmos DB</li>
+          <li><b>Savings plans</b> for compute that changes shape</li>
+          <li><b>Spot VMs</b> for interruptible batch work</li>
+          <li><b>Azure Hybrid Benefit</b> if you own Windows Server or SQL licenses</li>
+          <li><b>Auto-shutdown</b> and scale-to-zero for dev environments</li>
+        </ul></div>
+        <div class="code"><div class="cap"><span class="eyebrow">Resource Graph: find waste</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c">// unattached managed disks (still billed)</span>
+resources
+| where type == "microsoft.compute/disks"
+| where properties.diskState == "Unattached"
+| project name, resourceGroup, sku.name, properties.diskSizeGB
+
+<span class="c">// public IPs not attached to anything</span>
+resources
+| where type == "microsoft.network/publicipaddresses"
+| where isnull(properties.ipConfiguration)
+    and isnull(properties.natGateway)
+| project name, resourceGroup, location
+
+<span class="c">// resources missing an owner tag</span>
+resources
+| where isnull(tags.owner)
+| summarize count() by type</pre></div>
+      </div>
+
+      <h3>5. Keeping production healthy</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Area</th><th>Baseline to aim for</th><th>Azure tools</th></tr></thead>
+        <tbody>
+          <tr><td>Availability</td><td>Zone-redundant SKUs for production databases, gateways, App Service plans and AKS</td><td>Availability zones, zone-redundant storage</td></tr>
+          <tr><td>Backup</td><td>Every stateful resource has a backup policy, and restores are tested on a schedule</td><td>Azure Backup, SQL automated backups, blob soft delete and versioning</td></tr>
+          <tr><td>Disaster recovery</td><td>RTO/RPO agreed with app owners; a documented and rehearsed failover</td><td>Site Recovery, SQL failover groups, Cosmos multi-region, Front Door</td></tr>
+          <tr><td>Patching</td><td>VM OS patches on a schedule with maintenance windows; AKS on an upgrade channel</td><td>Update Manager, AKS auto-upgrade, node image upgrades</td></tr>
+          <tr><td>Access</td><td>No standing Owner on prod; admins use PIM; break-glass accounts monitored</td><td>PIM, access reviews, activity log alerts</td></tr>
+          <tr><td>Visibility</td><td>Diagnostic settings on everything, enforced by policy, sent to a central workspace</td><td>Azure Policy (DeployIfNotExists), Log Analytics, Defender for Cloud</td></tr>
+        </tbody></table></div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="dev.html"><small>← Previous</small>Building apps</a><a class="next" href="containers.html"><small>Next →</small>Containers &amp; Kubernetes</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Azure Monitor is the umbrella. Underneath it, nearly everything ends up as rows in a Log Analytics workspace that you query with KQL.">
+<title>Monitoring &amp; ops — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a aria-current="page" class="on" href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Monitoring &amp; ops</div>
+<section id="ops">
+      <header><span class="eyebrow">Chapter 10</span><h2>Monitoring &amp; operations</h2>
+        <p class="lede">Azure Monitor is the umbrella. Underneath it, nearly everything ends up as rows in a Log Analytics workspace that you query with KQL.</p></header>
+
+      <div class="cols">
+        <div class="panel"><h3>The telemetry pipeline</h3>
+          <ul>
+            <li><b>Platform metrics</b>: numeric time series every resource emits for free (CPU, requests, DTU). 93-day retention.</li>
+            <li><b>Activity log</b>: who did what at the control plane: "user X deleted VM Y". Subscription-level.</li>
+            <li><b>Resource logs</b>: data-plane detail (e.g. Key Vault access, firewall hits). Off by default; turn on with <b>diagnostic settings</b>.</li>
+            <li><b>Azure Monitor Agent + Data Collection Rules</b>: collect VM guest OS logs and perf counters.</li>
+            <li><b>Application Insights</b>: APM for your code, with OpenTelemetry support.</li>
+          </ul>
+        </div>
+        <div class="panel"><h3>Acting on it</h3>
+          <ul>
+            <li><b>Alerts</b>: metric, log-search, activity-log and service-health rules.</li>
+            <li><b>Action groups</b>: who to notify and what to trigger (email, SMS, webhook, Logic App, ITSM).</li>
+            <li><b>Workbooks</b> and <b>Azure Managed Grafana</b>: dashboards.</li>
+            <li><b>Service Health</b>: Azure's own incidents and planned maintenance affecting <i>your</i> resources.</li>
+            <li><b>Advisor</b>: recommendations on cost, security, reliability and performance.</li>
+          </ul>
+        </div>
+        <div class="panel"><h3>Keeping things running</h3>
+          <ul>
+            <li><b>Azure Backup</b>: VMs, SQL in VMs, Files, Blobs, AKS, into Recovery Services or Backup vaults.</li>
+            <li><b>Site Recovery</b>: replicate VMs to another region and fail over.</li>
+            <li><b>Update Manager</b>: OS patching for Azure and Arc-enabled machines.</li>
+            <li><b>Network Watcher</b>: connection troubleshoot, IP flow verify, flow logs.</li>
+            <li><b>Resource Health</b>: is <i>this</i> resource healthy right now?</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code"><div class="cap"><span class="eyebrow">Everyday KQL</span><button class="copy" type="button">Copy</button></div>
+<pre><span class="c">// Failed requests by operation, last 24h (Application Insights)</span>
+AppRequests
+| where TimeGenerated &gt; ago(24h) and Success == false
+| summarize failures = count() by OperationName, ResultCode
+| order by failures desc
+
+<span class="c">// Who deleted or changed things (Activity log)</span>
+AzureActivity
+| where TimeGenerated &gt; ago(7d)
+| where OperationNameValue endswith "DELETE" or OperationNameValue endswith "WRITE"
+| project TimeGenerated, Caller, OperationNameValue, ResourceGroup, _ResourceId
+| order by TimeGenerated desc
+
+<span class="c">// p95 latency in 5-minute buckets</span>
+AppRequests
+| where TimeGenerated &gt; ago(6h)
+| summarize p95 = percentile(DurationMs, 95) by bin(TimeGenerated, 5m)
+| render timechart
+
+<span class="c">// Resource Graph: every storage account that still allows public blob access</span>
+resources
+| where type == "microsoft.storage/storageaccounts"
+| where properties.allowBlobPublicAccess == true
+| project name, resourceGroup, subscriptionId, location</pre></div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="containers.html"><small>← Previous</small>Containers &amp; Kubernetes</a><a class="next" href="waf.html"><small>Next →</small>Well-Architected</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

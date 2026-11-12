@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Almost every Azure question gets easier once you know three things: where a resource sits in the hierarchy, which API you are talking to, and where…">
+<title>Mental model — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a aria-current="page" class="on" href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Mental model</div>
+<section id="mental-model">
+      <header><span class="eyebrow">Chapter 1</span><h2>The mental model</h2>
+        <p class="lede">Almost every Azure question gets easier once you know three things: where a resource sits in the hierarchy, which API you are talking to, and where it physically runs.</p></header>
+
+      <h3>The scope hierarchy</h3>
+      <p class="prose">Permissions (RBAC), policies, budgets and tags are assigned at a scope and inherit downward.</p>
+      <div class="ladder">
+        <div class="rung"><div><span class="lvl">scope 0</span><b>Entra tenant</b></div><p>Your organization's identity directory (formerly Azure AD). Holds users, groups, app registrations. One tenant can own many subscriptions.<small>Think: "who are you?"</small></p></div>
+        <div class="rung"><div><span class="lvl">scope 1</span><b>Management groups</b></div><p>Folders for subscriptions, up to 6 levels deep under the tenant root group. Assign org-wide policy and RBAC here (e.g. "Corp", "Online", "Sandbox").<small>Think: governance at scale</small></p></div>
+        <div class="rung"><div><span class="lvl">scope 2</span><b>Subscriptions</b></div><p>The billing and quota boundary. Each has its own limits and invoice line. Teams commonly get one subscription per app per environment.<small>Think: "who pays, and what are the limits?"</small></p></div>
+        <div class="rung"><div><span class="lvl">scope 3</span><b>Resource groups</b></div><p>A lifecycle container. Resources that are deployed, updated and deleted together live in one group. A group has a region for its metadata, but its resources can live anywhere.<small>Think: "what gets deleted together?"</small></p></div>
+        <div class="rung"><div><span class="lvl">scope 4</span><b>Resources</b></div><p>The actual things: a VM, a storage account, a SQL database. Each has a resource ID like <code>/subscriptions/{id}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/{name}</code>.<small>Think: the unit you pay for</small></p></div>
+      </div>
+
+      <div class="cols">
+        <div class="panel"><h3>Control plane vs data plane</h3>
+          <p>Every create, update or delete goes through <b>Azure Resource Manager (ARM)</b> at <code>management.azure.com</code>, whether you use the portal, CLI, Bicep or Terraform. That is the control plane.</p>
+          <p>Reading a blob or querying a database hits the service's own endpoint, e.g. <code>myacct.blob.core.windows.net</code>. That is the data plane, and it often has separate permissions.</p>
+          <p class="callout"><b>Common trap:</b> "Owner" on a storage account lets you manage it but does not grant reading blobs through Entra auth. You need a data role such as <code>Storage Blob Data Reader</code>.</p>
+        </div>
+        <div class="panel"><h3>Regions, zones, pairs</h3>
+          <ul>
+            <li><b>Region:</b> a set of datacenters in a geography (e.g. <code>eastus2</code>, <code>westeurope</code>). Not every service or VM size exists in every region.</li>
+            <li><b>Availability zone:</b> physically separate datacenters inside a region with independent power and cooling. Zone-redundant deployment survives one datacenter failing.</li>
+            <li><b>Region pair:</b> two regions in the same geography used for sequenced platform updates and geo-replication (e.g. East US 2 ↔ Central US). Some newer regions have no pair.</li>
+            <li><b>Sovereign clouds:</b> Azure Government and Azure operated by 21Vianet (China) are separate clouds with separate endpoints.</li>
+          </ul>
+        </div>
+        <div class="panel"><h3>Resource providers</h3>
+          <p>Services are exposed by namespaces like <code>Microsoft.Compute</code>, <code>Microsoft.Web</code>, <code>Microsoft.Network</code>. A subscription must have a provider registered before you can create its resources.</p>
+          <p>Each resource type has versioned APIs (<code>2023-05-01</code> style). Bicep and ARM templates pin those versions, which is why templates keep working when the service changes.</p>
+          <p><code>az provider register -n Microsoft.App</code></p>
+        </div>
+      </div>
+
+      <h3>The shared-responsibility split</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Model</th><th>You manage</th><th>Azure manages</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td>IaaS</td><td>OS patching, runtime, app, data, network rules</td><td>Hardware, hypervisor, physical network</td><td>Virtual Machines, VM Scale Sets, Managed Disks</td></tr>
+          <tr><td>PaaS</td><td>App code, data, configuration, access</td><td>OS, runtime patching, scaling machinery</td><td>App Service, Azure SQL Database, Container Apps</td></tr>
+          <tr><td>Serverless</td><td>Function code, triggers, bindings</td><td>Everything else, including scale to zero</td><td>Functions (Flex Consumption), Logic Apps, Event Grid</td></tr>
+          <tr><td>SaaS</td><td>Users, data, settings</td><td>The whole application</td><td>Microsoft 365, Dynamics 365, Fabric</td></tr>
+        </tbody></table></div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="start.html"><small>← Previous</small>Core ideas</a><a class="next" href="identity.html"><small>Next →</small>Identity &amp; governance</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

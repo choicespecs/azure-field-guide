@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Azure often has three or four services that look alike. These tables cover the comparisons that come up most in design reviews.">
+<title>Which one do I pick? — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a aria-current="page" class="on" href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Which one do I pick?</div>
+<section id="choose">
+      <header><span class="eyebrow">Chapter 4</span><h2>Which one do I pick?</h2>
+        <p class="lede">Azure often has three or four services that look alike. These tables cover the comparisons that come up most in design reviews.</p></header>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" aria-selected="true" data-t="compute" id="tab-compute">Compute</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="msg" id="tab-msg">Messaging</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="lb" id="tab-lb">Load balancing</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="db" id="tab-db">Databases</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="conn" id="tab-conn">Private connectivity</button>
+        <button class="tab" role="tab" aria-selected="false" data-t="red" id="tab-red">Storage redundancy</button>
+      </div>
+
+      <div class="tablewrap" data-p="compute"><table>
+        <thead><tr><th>Service</th><th>Pick it when</th><th>You manage</th><th>Scale to zero</th><th>Watch out for</th></tr></thead>
+        <tbody>
+          <tr><td>Virtual Machines</td><td>Lift-and-shift, custom OS, licensed software, full control</td><td>OS, patching, runtime</td><td>No (deallocate to stop compute billing)</td><td>You own patching and backups; disks bill even when stopped</td></tr>
+          <tr><td>App Service</td><td>Web apps and APIs in .NET, Java, Node, Python, PHP, or a container</td><td>Code + config</td><td>No</td><td>You pay for the plan, not per app; many apps can share one plan</td></tr>
+          <tr><td>Functions</td><td>Event-driven bits: a queue message, timer, HTTP hook, blob upload</td><td>Function code</td><td>Yes (Flex Consumption / Consumption)</td><td>Cold starts; execution time limits on consumption plans</td></tr>
+          <tr><td>Container Apps</td><td>Containerized microservices and jobs without running Kubernetes yourself</td><td>Container images + scale rules</td><td>Yes</td><td>No direct Kubernetes API access; check feature gaps vs AKS</td></tr>
+          <tr><td>AKS</td><td>You need the full Kubernetes API, operators, service mesh, many teams on one platform</td><td>Workloads, node pools, upgrades, add-ons</td><td>Node pools can scale to 0 (user pools)</td><td>Real platform-team effort: upgrades, networking, security</td></tr>
+          <tr><td>Container Instances</td><td>Run one container quickly, a batch task, or a CI agent</td><td>Container</td><td>Billed per second while running</td><td>No built-in autoscale or load balancing</td></tr>
+          <tr><td>Batch</td><td>Large parallel HPC or rendering jobs across many VMs</td><td>Job definitions, pools</td><td>Pools can scale to 0</td><td>Job scheduling model takes some learning</td></tr>
+          <tr><td>Static Web Apps</td><td>SPA or static site with optional managed Functions API</td><td>Front-end build</td><td>N/A (free tier exists)</td><td>The managed API is limited; link your own backend for more</td></tr>
+        </tbody></table></div>
+
+      <div class="tablewrap" data-p="msg" hidden><table>
+        <thead><tr><th>Service</th><th>Shape</th><th>Pick it when</th><th>Key features</th><th>Not for</th></tr></thead>
+        <tbody>
+          <tr><td>Service Bus</td><td>Enterprise message broker (queues, topics)</td><td>Commands and business transactions that must not be lost: "process order 123"</td><td>Sessions (FIFO per key), dead-lettering, duplicate detection, transactions, scheduled messages</td><td>Millions of telemetry events per second</td></tr>
+          <tr><td>Event Grid</td><td>Push-based event router (pub/sub)</td><td>Reacting to something that happened: "blob created", "resource deleted"</td><td>Filters, retries, CloudEvents schema, MQTT broker, system topics for Azure services</td><td>Ordered processing, large payloads</td></tr>
+          <tr><td>Event Hubs</td><td>Partitioned append-only log (Kafka-compatible)</td><td>High-volume streams: telemetry, clickstream, logs</td><td>Partitions, consumer groups, Capture to storage, Kafka protocol endpoint, retention/replay</td><td>Per-message acknowledgement workflows</td></tr>
+          <tr><td>Storage Queues</td><td>Simple queue inside a storage account</td><td>Cheap, basic background work; very large backlogs</td><td>Huge capacity, HTTP API, very low cost</td><td>Ordering, topics, dead-lettering (you build it)</td></tr>
+          <tr><td>Web PubSub / SignalR</td><td>Real-time push to browsers/clients</td><td>Live dashboards, chat, notifications</td><td>WebSockets at scale, managed connections</td><td>Server-to-server messaging</td></tr>
+        </tbody></table></div>
+
+      <div class="tablewrap" data-p="lb" hidden><table>
+        <thead><tr><th>Service</th><th>Layer</th><th>Reach</th><th>Pick it when</th><th>Extras</th></tr></thead>
+        <tbody>
+          <tr><td>Load Balancer</td><td>L4 (TCP/UDP)</td><td>Regional</td><td>Distribute traffic to VMs or scale sets; internal or public</td><td>HA ports, outbound rules, zone-redundant frontends</td></tr>
+          <tr><td>Application Gateway</td><td>L7 (HTTP/S)</td><td>Regional</td><td>Path-based routing, TLS termination, WAF in front of apps in a VNet</td><td>WAF v2, autoscale, AKS ingress via Application Gateway for Containers</td></tr>
+          <tr><td>Front Door</td><td>L7 (HTTP/S)</td><td>Global edge</td><td>Global entry point, CDN caching, multi-region failover</td><td>WAF, Private Link to origins (Premium), rules engine</td></tr>
+          <tr><td>Traffic Manager</td><td>DNS</td><td>Global</td><td>DNS-level routing for any protocol (priority, weighted, geographic, performance)</td><td>Works for non-HTTP; failover is bounded by DNS TTL</td></tr>
+        </tbody></table></div>
+
+      <div class="tablewrap" data-p="db" hidden><table>
+        <thead><tr><th>Service</th><th>Model</th><th>Pick it when</th><th>Key concepts</th><th>Watch out for</th></tr></thead>
+        <tbody>
+          <tr><td>Azure SQL Database</td><td>Relational (SQL Server engine), PaaS</td><td>New relational apps, SaaS per-tenant DBs</td><td>vCore vs DTU, serverless, Hyperscale, elastic pools, geo-replication, failover groups</td><td>No SQL Agent or cross-database queries in the usual way</td></tr>
+          <tr><td>SQL Managed Instance</td><td>Near-complete SQL Server instance, PaaS</td><td>Migrating existing SQL Server estates with Agent jobs, CLR, cross-DB queries</td><td>VNet-injected, instance pools, link to on-prem SQL</td><td>Higher entry cost; deploys into a dedicated subnet</td></tr>
+          <tr><td>PostgreSQL / MySQL Flexible Server</td><td>Open-source relational, PaaS</td><td>Open-source stacks, Django/Rails/Laravel apps</td><td>Burstable/GP/Memory tiers, zone-redundant HA, read replicas, extensions</td><td>Major-version upgrades need planning</td></tr>
+          <tr><td>Cosmos DB</td><td>Multi-model NoSQL, globally distributed</td><td>Low-latency at global scale, flexible schema, multi-region writes</td><td>Request Units (RU/s), partition keys, 5 consistency levels, change feed, vector search</td><td>A bad partition key is very expensive to fix later</td></tr>
+          <tr><td>Azure Managed Redis</td><td>In-memory key-value</td><td>Caching, sessions, rate-limiting, leaderboards</td><td>Eviction policies, clustering, persistence, active geo-replication</td><td>Azure Cache for Redis is retiring; new work should use Managed Redis</td></tr>
+          <tr><td>Data Explorer / Fabric Eventhouse</td><td>Append-heavy analytics (KQL)</td><td>Log and telemetry analytics at huge scale</td><td>KQL, ingestion mappings, materialized views</td><td>Not a transactional store</td></tr>
+        </tbody></table></div>
+
+      <div class="tablewrap" data-p="conn" hidden><table>
+        <thead><tr><th>Option</th><th>What it does</th><th>Traffic path</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td>Private Endpoint</td><td>Gives a PaaS resource a private IP in your subnet (Private Link)</td><td>Fully private; works from peered VNets and on-prem</td><td>Default choice for locking down PaaS. Pair with Private DNS zones like <code>privatelink.blob.core.windows.net</code>.</td></tr>
+          <tr><td>Service Endpoint</td><td>Extends the subnet's identity to a service so its firewall can allow that subnet</td><td>Optimized route, but the service keeps its public IP</td><td>Simple, free, same-region; does not cover on-prem traffic</td></tr>
+          <tr><td>VNet integration</td><td>Lets App Service/Functions make <i>outbound</i> calls into a VNet</td><td>Outbound only</td><td>Your web app needs to reach a private database. Combine with a private endpoint for inbound.</td></tr>
+          <tr><td>VPN Gateway</td><td>Encrypted IPsec tunnel over the internet</td><td>Site-to-site or point-to-site</td><td>Hybrid connectivity on a budget</td></tr>
+          <tr><td>ExpressRoute</td><td>Private circuit through a connectivity provider</td><td>Does not traverse the public internet</td><td>Predictable bandwidth and latency for serious hybrid workloads</td></tr>
+          <tr><td>VNet peering</td><td>Connects two VNets over the Microsoft backbone</td><td>Non-transitive by default</td><td>Hub-and-spoke designs; use a hub firewall or Virtual WAN for transit</td></tr>
+        </tbody></table></div>
+
+      <div class="tablewrap" data-p="red" hidden><table>
+        <thead><tr><th>Option</th><th>Copies</th><th>Survives</th><th>Read from secondary?</th><th>Typical use</th></tr></thead>
+        <tbody>
+          <tr><td>LRS</td><td>3 in one datacenter</td><td>Disk / rack failure</td><td>—</td><td>Dev/test, data you can recreate</td></tr>
+          <tr><td>ZRS</td><td>3 across availability zones</td><td>One datacenter failing</td><td>—</td><td>Production default in zone-enabled regions</td></tr>
+          <tr><td>GRS / RA-GRS</td><td>LRS + 3 async copies in the paired region</td><td>Regional outage (after failover)</td><td>RA- variant only</td><td>Backups, DR copies</td></tr>
+          <tr><td>GZRS / RA-GZRS</td><td>ZRS + 3 async copies in the paired region</td><td>Zone and regional failure</td><td>RA- variant only</td><td>Critical production data</td></tr>
+        </tbody></table></div>
+      <p class="prose" style="color:var(--muted);font-size:.9rem">Blob access tiers are a separate axis from redundancy: <b>Hot</b> → <b>Cool</b> (30-day minimum) → <b>Cold</b> (90-day) → <b>Archive</b> (180-day, offline, hours to rehydrate). Lifecycle management policies move data between tiers automatically.</p>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="catalog.html"><small>← Previous</small>Service catalog</a><a class="next" href="patterns.html"><small>Next →</small>How it fits together</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>

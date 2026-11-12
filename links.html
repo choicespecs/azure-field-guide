@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Primary sources first. Azure renames and retires things often, so trust current Microsoft docs over blog posts more than a year old.">
+<title>Docs &amp; links — Azure Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <a class="brand" href="index.html" style="color:inherit;text-decoration:none;display:block">Azure Field Guide</a>
+    <a class="start-link" href="start.html">Core ideas</a>
+    <ol id="toc">
+      <li><a href="mental-model.html">Mental model</a></li>
+      <li><a href="identity.html">Identity &amp; governance</a></li>
+      <li><a href="catalog.html">Service catalog</a></li>
+      <li><a href="choose.html">Which one do I pick?</a></li>
+      <li><a href="patterns.html">How it fits together</a></li>
+      <li><a href="tooling.html">Tooling &amp; IaC</a></li>
+      <li><a href="dev.html">Building apps</a></li>
+      <li><a href="infra.html">Running the platform</a></li>
+      <li><a href="containers.html">Containers &amp; Kubernetes</a></li>
+      <li><a href="ops.html">Monitoring &amp; ops</a></li>
+      <li><a href="waf.html">Well-Architected</a></li>
+      <li><a href="labs.html">Walkthroughs</a></li>
+      <li><a href="onboarding.html">Mapping an environment</a></li>
+      <li><a aria-current="page" class="on" href="links.html">Docs &amp; links</a></li>
+      <li><a href="glossary.html">Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="jump"><label class="eyebrow" for="jumpSel">Jump to</label>
+      <select id="jumpSel">
+        <option value="start">Core ideas</option><option value="mental-model">Mental model</option><option value="identity">Identity &amp; governance</option><option value="catalog">Service catalog</option><option value="choose">Which one do I pick?</option><option value="patterns">How it fits together</option><option value="tooling">Tooling &amp; IaC</option><option value="dev">Building apps</option><option value="infra">Running the platform</option><option value="containers">Containers &amp; Kubernetes</option><option value="ops">Monitoring &amp; ops</option><option value="waf">Well-Architected</option><option value="labs">Walkthroughs</option><option value="onboarding">Mapping an environment</option><option value="links">Docs &amp; links</option><option value="glossary">Glossary</option>
+      </select>
+    </div>
+
+    
+
+    <div class="crumbs"><a href="index.html">Azure Field Guide</a> / Docs &amp; links</div>
+<section id="links">
+      <header><span class="eyebrow">Chapter 14</span><h2>Docs &amp; links</h2>
+        <p class="lede">Primary sources first. Azure renames and retires things often, so trust current Microsoft docs over blog posts more than a year old.</p></header>
+      <div class="res">
+        <div><h3>Official docs &amp; guidance</h3><ul>
+          <li><a href="https://learn.microsoft.com/azure/" target="_blank" rel="noopener">Azure documentation</a><span>Service docs, quickstarts and API references</span></li>
+          <li><a href="https://learn.microsoft.com/azure/architecture/" target="_blank" rel="noopener">Azure Architecture Center</a><span>Reference architectures, design patterns, technology choice guides</span></li>
+          <li><a href="https://learn.microsoft.com/azure/well-architected/" target="_blank" rel="noopener">Well-Architected Framework</a><span>Pillars, service guides, assessments</span></li>
+          <li><a href="https://learn.microsoft.com/azure/cloud-adoption-framework/" target="_blank" rel="noopener">Cloud Adoption Framework</a><span>Landing zones, governance, naming and tagging</span></li>
+          <li><a href="https://learn.microsoft.com/azure/azure-resource-manager/bicep/" target="_blank" rel="noopener">Bicep documentation</a><span>Language reference and resource type schemas</span></li>
+          <li><a href="https://azure.microsoft.com/updates/" target="_blank" rel="noopener">Azure Updates</a><span>Previews, GA announcements and retirements</span></li>
+          <li><a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">Pricing calculator</a><span>Estimate before you build</span></li>
+        </ul></div>
+        <div><h3>Tools &amp; samples</h3><ul>
+          <li><a href="https://azure.microsoft.com/free/" target="_blank" rel="noopener">Azure free account</a><span>Starter credit plus always-free service tiers</span></li>
+          <li><a href="https://learn.microsoft.com/azure/developer/azure-developer-cli/" target="_blank" rel="noopener">Azure Developer CLI templates</a><span>Deploy full sample apps with <code>azd up</code></span></li>
+          <li><a href="https://azure.github.io/Azure-Verified-Modules/" target="_blank" rel="noopener">Azure Verified Modules</a><span>Production-grade Bicep/Terraform modules to read and reuse</span></li>
+          <li><a href="https://github.com/Azure-Samples" target="_blank" rel="noopener">Azure-Samples on GitHub</a><span>Thousands of runnable samples</span></li>
+          <li><a href="https://learn.microsoft.com/kusto/query/" target="_blank" rel="noopener">KQL reference</a><span>Pair with the free demo Log Analytics workspace in the docs</span></li>
+          <li><a href="https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits" target="_blank" rel="noopener">Subscription and service limits</a><span>Bookmark this; you will hit a quota eventually</span></li>
+        </ul></div>
+        <div><h3>Video &amp; community</h3><ul>
+          <li><a href="https://www.youtube.com/@NTFAQGuy" target="_blank" rel="noopener">John Savill's Technical Training</a><span>Deep, clear whiteboard explainers of individual services</span></li>
+          <li><a href="https://www.youtube.com/@MicrosoftAzure" target="_blank" rel="noopener">Microsoft Azure YouTube</a><span>Includes Azure Friday and conference sessions</span></li>
+          <li><a href="https://techcommunity.microsoft.com/" target="_blank" rel="noopener">Microsoft Tech Community</a><span>Product-team blogs, often the first word on changes</span></li>
+          <li><a href="https://azurecharts.com/" target="_blank" rel="noopener">Azure Charts</a><span>Community site tracking services, regions and updates</span></li>
+          <li><a href="https://www.reddit.com/r/AZURE/" target="_blank" rel="noopener">r/AZURE</a><span>Real-world questions and gotchas</span></li>
+        </ul></div>
+      </div>
+    </section>
+<nav class="pager" aria-label="Previous and next"><a class="prev" href="onboarding.html"><small>← Previous</small>Mapping an environment</a><a class="next" href="glossary.html"><small>Next →</small>Glossary</a></nav>
+
+
+    <footer>Service names and features reflect Azure as of October 2026. Azure changes monthly; when this page and Microsoft Learn disagree, trust Learn.</footer>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="assets/site2.js"></script>
+</body>
+</html>
